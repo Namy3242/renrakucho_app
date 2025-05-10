@@ -83,6 +83,27 @@ class AuthRepository {
     return UserModel.fromJson(doc.data()!, doc.id);
   }
 
+  // メールアドレスで保護者を検索
+  Future<List<UserModel>> searchParents(String email) async {
+    if (email.isEmpty) return [];
+
+    try {
+      final snapshot = await _usersRef
+          .where('email', isGreaterThanOrEqualTo: email)
+          .where('email', isLessThan: email + 'z')
+          .where('role', isEqualTo: UserRole.parent.toString())
+          .limit(10)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => UserModel.fromJson(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print('Error searching parents: $e');
+      return [];
+    }
+  }
+
   // Firebase Authのエラーハンドリング
   Exception _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
