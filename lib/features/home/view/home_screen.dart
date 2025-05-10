@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// PostListScreen を import
 import '../../post/view/post_list_screen.dart';
+import '../../post/view/post_create_screen.dart'; // 追加
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -22,9 +22,6 @@ class HomeScreen extends StatelessWidget {
           )
         ],
       ),
-      // body: Center(
-      //   child: Text('ログイン中のユーザーID: ${user?.uid ?? "不明"}'),
-      // ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -43,6 +40,16 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const PostCreateScreen()),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
+// This screen serves as the main screen after login, displaying the user's ID and a button to view posts.
+// The floating action button allows the user to create a new post.
