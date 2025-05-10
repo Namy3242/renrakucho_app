@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../post/view/post_list_screen.dart';
-import '../../post/view/post_create_screen.dart'; // 追加
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/view_model/auth_view_model.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -17,39 +16,25 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await FirebaseAuth.instance.signOut();
+              await ref.read(authViewModelProvider.notifier).signOut();
             },
-          )
+          ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('ログイン中のユーザーID: ${user?.uid ?? "不明"}'),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PostListScreen()),
-                );
-              },
-              child: const Text('投稿一覧を見る'),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => const PostCreateScreen()),
+      body: currentUser.when(
+        data: (user) {
+          if (user == null) return const SizedBox.shrink();
+          return Center(
+            child: Text('ようこそ、${user.displayName ?? 'ユーザー'}さん'),
           );
         },
-        child: const Icon(Icons.add),
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, stack) => Center(
+          child: Text('エラーが発生しました: $error'),
+        ),
       ),
     );
   }
 }
-// This screen serves as the main screen after login, displaying the user's ID and a button to view posts.
-// The floating action button allows the user to create a new post.
