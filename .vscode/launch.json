@@ -1,0 +1,83 @@
+{
+    // IntelliSense を使用して利用可能な属性を学べます。
+    // 既存の属性の説明をホバーして表示します。
+    // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "renrakucho_app (web)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "args": [
+                "--web-port=8080"
+            ]
+        },
+        {
+            "name": "renrakucho_app (web, profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile",
+            "args": [
+                "--web-port=8080"
+            ]
+        },
+        {
+            "name": "renrakucho_app (web, release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+            "args": [
+                "--web-port=8080"
+            ]
+        },
+        {
+            "name": "renrakucho_app (web, no debug)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "args": [
+                "--web-port=8080",
+                "--no-debug"
+            ]
+        },
+        {
+            "name": "renrakucho_app (web, no debug, profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile",
+            "args": [
+                "--web-port=8080",
+                "--no-debug"
+            ]
+        },
+        {
+            "name": "renrakucho_app (web, no debug, release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+            "args": [
+                "--web-port=8080",
+                "--no-debug"
+            ]
+        },
+        {
+            "name": "renrakucho_app",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "renrakucho_app (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "renrakucho_app (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        
+    ]
+}
