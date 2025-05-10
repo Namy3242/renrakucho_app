@@ -1,0 +1,9 @@
+android {
+    // ...existing configuration...
+    
+    defaultConfig {
+        // ...existing config...
+        minSdkVersion 19  // この行を変更
+        // ...existing config...
+    }
+}

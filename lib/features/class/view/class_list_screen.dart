@@ -10,7 +10,8 @@ import '../../../core/utils/permission_utils.dart';
 class ClassListScreen extends ConsumerWidget {
   const ClassListScreen({super.key});
 
-  @override  Widget build(BuildContext context, WidgetRef ref) {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final classesState = ref.watch(classViewModelProvider);
     final currentUser = ref.watch(currentUserProvider);
 
@@ -39,7 +40,8 @@ class ClassListScreen extends ConsumerWidget {
                   margin: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
-                  ),                  child: ListTile(
+                  ),
+                  child: ListTile(
                     title: Text(classModel.name),
                     subtitle: Text('生徒数: ${classModel.studentIds.length}人'),
                     trailing: Row(
@@ -55,7 +57,7 @@ class ClassListScreen extends ConsumerWidget {
                                       teacherId: classModel.teacherId,
                                       userId: user.id,
                                     )) {
-                                      context.push('/classes/${classModel.id}/edit');
+                                      if (context.mounted) context.push('/classes/${classModel.id}/edit');
                                     } else {
                                       PermissionUtils.showNoPermissionDialog(context);
                                     }
@@ -67,7 +69,7 @@ class ClassListScreen extends ConsumerWidget {
                       ],
                     ),
                     onTap: () {
-                      context.push('/classes/${classModel.id}');
+                      if (context.mounted) context.push('/classes/${classModel.id}');
                     },
                   ),
                 );

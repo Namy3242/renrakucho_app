@@ -4,6 +4,7 @@ import '../../auth/view_model/auth_view_model.dart';
 import '../../post/view/post_list_screen.dart';
 import '../../post/view/post_create_screen.dart';
 import '../../../core/widgets/loading_overlay.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -29,12 +30,7 @@ class HomeScreen extends ConsumerWidget {
           body: const PostListScreen(),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PostCreateScreen(),
-                ),
-              );
+              context.push('/posts/create');  // MaterialRouteから変更
             },
             child: const Icon(Icons.add),
           ),
@@ -54,7 +50,17 @@ class HomeScreen extends ConsumerWidget {
               ),
             ],
             onDestinationSelected: (index) {
-              // TODO: 画面遷移の実装
+              switch (index) {
+                case 0:
+                  if (context.mounted) context.go('/home');
+                  break;
+                case 1:
+                  if (context.mounted) context.go('/classes');
+                  break;
+                case 2:
+                  // TODO: プロフィール画面への遷移を実装
+                  break;
+              }
             },
           ),
         );

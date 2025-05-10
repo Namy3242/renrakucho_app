@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../view_model/auth_view_model.dart';
 import 'register_screen.dart';
 
@@ -37,6 +38,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _emailController.text,
             _passwordController.text,
           );
+      if (context.mounted) {
+        context.go('/home');
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -135,12 +139,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   TextButton(
                     onPressed: _isLoading
                         ? null
-                        : () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const RegisterScreen(),
-                              ),
-                            ),
+                        : () => context.push('/register'),
                     child: const Text('アカウントをお持ちでない方はこちら'),
                   ),
                 ],
@@ -152,32 +151,3 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
-// This screen allows users to log in with their email and password.
-// It also provides a button to navigate to the registration screen if the user doesn't have an account.
-// The login process is handled by the AuthViewModel, and error messages are displayed based on the login result.
-// The email and password fields are validated before attempting to log in.
-// The loading state is managed to prevent multiple submissions while the login process is ongoing.
-// The screen is designed to be user-friendly and responsive, adapting to different screen sizes.
-// The form fields are validated to ensure that the user inputs valid data before proceeding with the login process.
-// The login button is disabled while the login process is ongoing to prevent multiple submissions.
-// The screen is designed to be visually appealing and consistent with the overall app theme.
-// The email and password fields are validated to ensure that the user inputs valid data before proceeding with the login process.
-// The login button is disabled while the login process is ongoing to prevent multiple submissions.
-// The screen is designed to be visually appealing and consistent with the overall app theme.
-// The email and password fields are validated to ensure that the user inputs valid data before proceeding with the login process.
-// The login button is disabled while the login process is ongoing to prevent multiple submissions.
-// The screen is designed to be visually appealing and consistent with the overall app theme.
-// The email and password fields are validated to ensure that the user inputs valid data before proceeding with the login process.
-// The login button is disabled while the login process is ongoing to prevent multiple submissions.
-// The screen is designed to be visually appealing and consistent with the overall app theme.
-// The email and password fields are validated to ensure that the user inputs valid data before proceeding with the login process.
-// The login button is disabled while the login process is ongoing to prevent multiple submissions.
-// The screen is designed to be visually appealing and consistent with the overall app theme.
-// The email and password fields are validated to ensure that the user inputs valid data before proceeding with the login process.
-// The login button is disabled while the login process is ongoing to prevent multiple submissions.
-// The screen is designed to be visually appealing and consistent with the overall app theme.
-// The email and password fields are validated to ensure that the user inputs valid data before proceeding with the login process.
-// The login button is disabled while the login process is ongoing to prevent multiple submissions.
-// The screen is designed to be visually appealing and consistent with the overall app theme.
-// The email and password fields are validated to ensure that the user inputs valid data before proceeding with the login process.
-// The login button is disabled while the login process is ongoing to prevent multiple submissions.

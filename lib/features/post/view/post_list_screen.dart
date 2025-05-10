@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../view_model/post_view_model.dart';
 import 'post_detail_screen.dart';
 import '../../../core/widgets/loading_overlay.dart';
@@ -34,12 +35,7 @@ class PostListScreen extends ConsumerWidget {
                 ),
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PostDetailScreen(post: post),
-                      ),
-                    );
+                    context.push('/posts/${post.id}');
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(16),

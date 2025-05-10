@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import '../../../auth/model/user_role.dart';
 import '../../../auth/model/user_model.dart';
 import '../../../auth/repository/auth_repository_provider.dart';
@@ -256,7 +257,7 @@ class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
                             builder: (context) => ClassEditScreen(classModel: classModel),
                           ),
                         );
-                        ref.invalidate(selectedClassProvider(classModel.id));
+                        ref.invalidate(classViewModelProvider); // Replace with the correct provider if applicable
                       }
                       break;
                     case 'delete':

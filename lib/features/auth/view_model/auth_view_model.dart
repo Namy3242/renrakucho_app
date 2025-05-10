@@ -78,6 +78,8 @@ class AuthViewModel extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.loading();
       await _repository.signOut();
       state = const AsyncValue.data(null);
+      // Note: 画面遷移はGoRouterのredirectで自動的に処理されるため、
+      // ここでの明示的な画面遷移は不要
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;

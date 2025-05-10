@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/view/login_screen.dart';
+import '../features/auth/view/register_screen.dart';  // 追加
 import '../features/home/view/home_screen.dart';
 import '../features/class/view/class_list_screen.dart';
 import '../features/class/view/class_create_screen.dart';
@@ -11,19 +12,37 @@ import '../features/common/view/not_found_screen.dart';
 import '../core/widgets/loading_overlay.dart';
 import '../features/common/view/error_screen.dart';
 import '../providers/auth_provider.dart';
-import '../providers/class_provider.dart';
+import '../features/class/repository/class_repository_provider.dart';
+import '../features/post/view/post_create_screen.dart';
+import '../features/post/view/post_detail_screen.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouter = GoRouter(
-  redirect: (context, state) {
-    final container = ProviderScope.containerOf(context);
-    final user = container.read(authStateProvider).asData?.value;
+  navigatorKey: _rootNavigatorKey,
+  initialLocation: '/home',
+  errorBuilder: (context, state) => const NotFoundScreen(),
+  refreshListenable: GoRouterRefreshStream(Connectivity().onConnectivityChanged), // 追加
+  redirect: (context, state) async { // asyncに変更
+    try {
+      final container = ProviderScope.containerOf(context);
+      final user = container.read(authStateProvider).asData?.value;
 
-    final loggingIn = state.matchedLocation == '/login';
+      final loggingIn = state.matchedLocation == '/login';
+      final registering = state.matchedLocation == '/register';
+      final isAuthRoute = loggingIn || registering;
 
-    if (user == null) {
-      return loggingIn ? null : '/login';
-    } else {
-      return loggingIn ? '/home' : null;
+      if (user == null) {
+        return isAuthRoute ? null : '/login';
+      } else {
+        return isAuthRoute ? '/home' : null;
+      }
+    } catch (e) {
+      debugPrint('Routing error: $e');
+      return '/error';
     }
   },
   routes: [
@@ -34,6 +53,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/home',
       builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
       path: '/classes',
@@ -51,20 +74,42 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/classes/:id/edit',
-      builder: (context, state) {
-        final classModel = ref.watch(selectedClassProvider(state.pathParameters['id']!));
-        return classModel.when(
-          data: (model) => model == null
-              ? const NotFoundScreen()
-              : ClassEditScreen(classModel: model),
-          loading: () => const LoadingOverlay(),
-          error: (_, __) => const ErrorScreen(),
-        );
-      },
+      builder: (context, state) => ClassDetailScreen(
+        classId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/posts/create',
+      builder: (context, state) => const PostCreateScreen(),
+    ),
+    GoRoute(
+      path: '/posts/:id',
+      builder: (context, state) => PostDetailScreen(
+        postId: state.pathParameters['id']!,
+      ),
     ),
   ],
 );
-// このコードは、Flutterアプリケーションのルーティングを定義しています。
-// GoRouterを使用して、ログイン画面とホーム画面のルートを設定しています。
-// ユーザーの認証状態に基づいて、適切な画面にリダイレクトします。
-// 各画面は、GoRouteを使用して定義されており、URLパスに基づいて表示されます。
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<ConnectivityResult> stream) {
+    notifyListeners();
+    if (!kIsWeb) {
+      _subscription = stream.listen(
+        (ConnectivityResult result) => notifyListeners(),
+        onError: (error) {
+          debugPrint('Connectivity error: $error');
+          notifyListeners();
+        },
+      );
+    }
+  }
+
+  StreamSubscription<ConnectivityResult>? _subscription;
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+}

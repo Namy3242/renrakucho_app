@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../model/class_model.dart';
 import '../repository/class_repository.dart';
+import '../repository/class_repository_provider.dart';
 
 final classViewModelProvider = StateNotifierProvider<ClassViewModel, AsyncValue<List<ClassModel>>>(
-  (ref) => ClassViewModel(ClassRepository()),
+  (ref) => ClassViewModel(ref.watch(classRepositoryProvider)),
 );
 
 class ClassViewModel extends StateNotifier<AsyncValue<List<ClassModel>>> {

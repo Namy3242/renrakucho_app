@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';  // Add this import
+import '../../auth/view_model/user_provider.dart';
 import '../../class/view_model/class_view_model.dart';
 import '../../auth/view_model/auth_view_model.dart';
+import '../repository/class_repository_provider.dart'; // 修正されたパス
+import '../model/class_model.dart'; // Ensure this is the correct path to ClassModel
 import '../../auth/model/user_role.dart';
 import '../../../core/widgets/loading_overlay.dart';
 import 'widgets/member_list.dart';
@@ -45,7 +49,7 @@ class ClassDetailScreen extends ConsumerWidget {
               onSelected: (value) async {
                 switch (value) {
                   case 'edit':
-                    // TODO: 編集画面へ遷移
+                    if (context.mounted) context.push('/classes/${classId}/edit');
                     break;
                   case 'delete':
                     await _confirmDelete(context, ref);
