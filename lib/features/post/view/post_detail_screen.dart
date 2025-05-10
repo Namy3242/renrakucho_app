@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../model/post.dart';
+import '../view_model/comment_view_model.dart';
 import '../view_model/post_view_model.dart';
 import '../../auth/view_model/auth_view_model.dart';
+import '../../../core/utils/date_formatter.dart';
 
 class PostDetailScreen extends ConsumerWidget {
   const PostDetailScreen({
@@ -119,19 +121,7 @@ class PostDetailScreen extends ConsumerWidget {
   }
 
   String _formatDate(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays == 0) {
-      if (difference.inHours == 0) {
-        return '${difference.inMinutes}分前';
-      }
-      return '${difference.inHours}時間前';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}日前';
-    } else {
-      return '${dateTime.year}/${dateTime.month}/${dateTime.day}';
-    }
+    return DateFormatter.format(dateTime);
   }
 }
 
@@ -188,8 +178,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                   
                   await ref.read(commentViewModelProvider(widget.postId).notifier)
                       .addComment(
-                        _commentController.text,
-                        currentUser.value!.id,
+                        content: _commentController.text,  // 名前付き引数として渡す
+                        authorId: currentUser.value!.id,   // 名前付き引数として渡す
                       );
                   _commentController.clear();
                 },
@@ -215,7 +205,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                 final comment = comments[index];
                 return ListTile(
                   title: Text(comment.content),
-                  subtitle: Text(_formatDate(comment.createdAt)),
+                  subtitle: Text(DateFormatter.format(comment.createdAt)),
                   trailing: currentUser.valueOrNull?.id == comment.authorId
                       ? IconButton(
                           icon: const Icon(Icons.delete_outline),

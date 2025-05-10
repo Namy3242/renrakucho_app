@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../model/comment.dart';
 import '../repository/comment_repository.dart';
+import '../repository/comment_repository_provider.dart';
 
 final commentViewModelProvider = StateNotifierProvider.family<CommentViewModel, AsyncValue<List<Comment>>, String>(
-  (ref, postId) => CommentViewModel(CommentRepository(), postId),
+  (ref, postId) => CommentViewModel(ref.watch(commentRepositoryProvider), postId),
 );
 
 class CommentViewModel extends StateNotifier<AsyncValue<List<Comment>>> {
@@ -25,26 +26,36 @@ class CommentViewModel extends StateNotifier<AsyncValue<List<Comment>>> {
     );
   }
 
-  Future<void> addComment(String content, String authorId) async {
+  Future<void> addComment({
+    required String content,
+    required String authorId,
+  }) async {
     try {
+      state = const AsyncValue.loading();
+      
       final comment = Comment(
-        id: '',
+        id: '',  // リポジトリで自動生成
         postId: _postId,
         authorId: authorId,
         content: content,
         createdAt: DateTime.now(),
       );
+      
       await _repository.addComment(comment);
+      
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+      rethrow;
     }
   }
 
   Future<void> deleteComment(String commentId) async {
     try {
+      state = const AsyncValue.loading();
       await _repository.deleteComment(commentId);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+      rethrow;
     }
   }
 }
