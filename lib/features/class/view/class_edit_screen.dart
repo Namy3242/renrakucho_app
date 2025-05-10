@@ -4,6 +4,14 @@ import 'package:go_router/go_router.dart';
 import '../model/class_model.dart';
 import '../view_model/class_view_model.dart';
 import '../../../core/widgets/loading_overlay.dart';
+import '../../auth/model/user_model.dart';
+import '../../auth/repository/user_repository_provider.dart';
+import '../../auth/view_model/auth_view_model.dart';
+import '../../auth/view_model/user_provider.dart';  // 追加
+
+final teachersProvider = FutureProvider<List<UserModel>>((ref) async {
+  return await ref.read(userRepositoryProvider).getTeachers();
+});
 
 class ClassEditScreen extends ConsumerStatefulWidget {
   const ClassEditScreen({
@@ -19,13 +27,16 @@ class ClassEditScreen extends ConsumerStatefulWidget {
 
 class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  late TextEditingController _nameController;
+  String? _selectedTeacherId;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController.text = widget.classModel.name;
+    _nameController = TextEditingController(text: widget.classModel.name);
+    _selectedTeacherId = widget.classModel.teacherId ??
+        ref.read(currentUserProvider).value?.id;  // 修正
   }
 
   @override
@@ -42,6 +53,7 @@ class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
     try {
       final updatedClass = widget.classModel.copyWith(
         name: _nameController.text.trim(),
+        teacherId: _selectedTeacherId,
       );
 
       await ref.read(classViewModelProvider.notifier).updateClass(updatedClass);
@@ -50,7 +62,7 @@ class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('クラスを更新しました')),
         );
-        context.pop();
+        Navigator.pop(context, true); // 更新成功を通知
       }
     } catch (e) {
       if (mounted) {
@@ -67,6 +79,8 @@ class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final teachers = ref.watch(teachersProvider);
+
     return Stack(
       children: [
         Scaffold(
@@ -96,6 +110,28 @@ class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
                     },
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _updateClass(),
+                  ),
+                  const SizedBox(height: 16),
+                  teachers.when(
+                    data: (teachersList) => DropdownButtonFormField<String>(
+                      value: _selectedTeacherId,
+                      decoration: const InputDecoration(
+                        labelText: '担任',
+                      ),
+                      items: teachersList.map((teacher) {
+                        return DropdownMenuItem(
+                          value: teacher.id,
+                          child: Text(teacher.displayName ?? '名前なし'),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTeacherId = value;
+                        });
+                      },
+                    ),
+                    loading: () => const CircularProgressIndicator(),
+                    error: (_, __) => const Text('教師一覧の取得に失敗しました'),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(

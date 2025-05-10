@@ -4,6 +4,13 @@ import '../../class/view_model/class_view_model.dart';
 import '../../../core/widgets/loading_overlay.dart';
 import '../../auth/view_model/auth_view_model.dart';
 import '../../auth/model/user_role.dart';
+import '../../auth/model/user_model.dart';
+import '../../auth/repository/user_repository.dart';
+import '../../auth/repository/user_repository_provider.dart';
+
+final teachersProvider = FutureProvider<List<UserModel>>((ref) async {
+  return await ref.read(userRepositoryProvider).getTeachers();
+});
 
 class ClassCreateScreen extends ConsumerStatefulWidget {
   const ClassCreateScreen({super.key});
@@ -16,6 +23,13 @@ class _ClassCreateScreenState extends ConsumerState<ClassCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   bool _isLoading = false;
+  String? _selectedTeacherId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTeacherId = ref.read(currentUserProvider).value?.id;
+  }
 
   @override
   void dispose() {
@@ -34,14 +48,14 @@ class _ClassCreateScreenState extends ConsumerState<ClassCreateScreen> {
 
       await ref.read(classViewModelProvider.notifier).createClass(
             name: _nameController.text.trim(),
-            teacherId: currentUser.id,
+            teacherId: _selectedTeacherId ?? currentUser.id,
           );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('クラスを作成しました')),
         );
-          Navigator.pop(context); // context.pop() から変更
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -58,6 +72,8 @@ class _ClassCreateScreenState extends ConsumerState<ClassCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final teachers = ref.watch(teachersProvider);
+
     return Stack(
       children: [
         Scaffold(
@@ -87,6 +103,29 @@ class _ClassCreateScreenState extends ConsumerState<ClassCreateScreen> {
                     },
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _createClass(),
+                  ),
+                  const SizedBox(height: 16),
+                  teachers.when(
+                    data: (teachersList) => DropdownButtonFormField<String>(
+                      value: _selectedTeacherId,
+                      decoration: const InputDecoration(
+                        labelText: '担任',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: teachersList.map((teacher) {
+                        return DropdownMenuItem(
+                          value: teacher.id,
+                          child: Text(teacher.displayName ?? '名前なし'),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTeacherId = value;
+                        });
+                      },
+                    ),
+                    loading: () => const CircularProgressIndicator(),
+                    error: (_, __) => const Text('教師一覧の取得に失敗しました'),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(

@@ -90,6 +90,36 @@ class ClassListScreen extends ConsumerWidget {
               )
             : null,
       ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 1, // クラス画面を選択状態に
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home),
+            label: 'ホーム',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.class_),
+            label: 'クラス',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person),
+            label: 'プロフィール',
+          ),
+        ],
+        onDestinationSelected: (index) {
+          switch (index) {
+            case 0:
+              context.go('/home');
+              break;
+            case 1:
+              context.go('/classes');
+              break;
+            case 2:
+              // TODO: プロフィール画面への遷移を実装
+              break;
+          }
+        },
+      ),
     );
   }
 }

@@ -1,0 +1,22 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../model/user_model.dart';
+import '../model/user_role.dart';
+
+class UserRepository {
+  final _usersRef = FirebaseFirestore.instance.collection('users');
+
+  Future<List<UserModel>> getTeachers() async {
+    try {
+      final snapshot = await _usersRef
+          .where('role', isEqualTo: UserRole.teacher.toString())
+          .orderBy('displayName')
+          .get();
+      return snapshot.docs
+          .map((doc) => UserModel.fromJson(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print('Error getting teachers: $e');
+      rethrow;
+    }
+  }
+}

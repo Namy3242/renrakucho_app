@@ -9,6 +9,21 @@ import 'package:go_router/go_router.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(authViewModelProvider.notifier).signOut();
+      if (context.mounted) {
+        context.go('/login');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ログアウトに失敗しました: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
@@ -23,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.logout),
-                onPressed: () => ref.read(authViewModelProvider.notifier).signOut(),
+                onPressed: () => _handleLogout(context, ref),
               ),
             ],
           ),

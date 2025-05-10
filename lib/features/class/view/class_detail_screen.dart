@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';  // Add this import
+import 'package:renrakucho_app/features/class/view/class_edit_screen.dart';
 import '../../auth/view_model/user_provider.dart';
 import '../../class/view_model/class_view_model.dart';
 import '../../auth/view_model/auth_view_model.dart';
@@ -49,7 +50,21 @@ class ClassDetailScreen extends ConsumerWidget {
               onSelected: (value) async {
                 switch (value) {
                   case 'edit':
-                    if (context.mounted) context.push('/classes/${classId}/edit');
+                    final classModel = classState.value;
+                    if (classModel != null) {
+                      if (context.mounted) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ClassEditScreen(classModel: classModel),
+                          ),
+                        );
+                        if (result == true && context.mounted) {
+                          ref.invalidate(selectedClassProvider(classId));
+                          ref.invalidate(classViewModelProvider);
+                        }
+                      }
+                    }
                     break;
                   case 'delete':
                     await _confirmDelete(context, ref);
