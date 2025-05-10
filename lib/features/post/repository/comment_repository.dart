@@ -6,13 +6,25 @@ class CommentRepository {
 
   // 投稿に紐づくコメントを取得
   Stream<List<Comment>> getComments(String postId) {
-    return _commentsRef
-        .where('postId', isEqualTo: postId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Comment.fromJson(doc.data(), doc.id))
-            .toList());
+    try {
+      return _commentsRef
+          .where('postId', isEqualTo: postId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .handleError((error) {
+            if (error.toString().contains('failed-precondition')) {
+              print('インデックスが必要です: $error');
+              // Firestoreコンソールに表示されるリンクをコピーしてインデックスを作成してください
+            }
+            throw error;
+          })
+          .map((snapshot) => snapshot.docs
+              .map((doc) => Comment.fromJson(doc.data(), doc.id))
+              .toList());
+    } catch (e) {
+      print('Error getting comments: $e');
+      rethrow;
+    }
   }
 
   // コメントを追加
