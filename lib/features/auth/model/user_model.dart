@@ -6,6 +6,7 @@ class UserModel {
   final String? displayName;
   final UserRole role;
   final String? classId;  // 所属クラスID（保育者は担任クラス、保護者は子供のクラス）
+  final String? kindergartenId; // 追加
   final List<String> childIds; // 保護者の場合: 子供のIDリスト、保育者は空リスト
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -16,6 +17,7 @@ class UserModel {
     this.displayName,
     required this.role,
     this.classId,
+    this.kindergartenId,
     this.childIds = const [],
     required this.createdAt,
     this.updatedAt,
@@ -31,6 +33,7 @@ class UserModel {
         (role) => role.toString() == json['role'] as String,
       ),
       classId: json['classId'] as String?,
+      kindergartenId: json['kindergartenId'] as String?, // 追加
       childIds: json['childIds'] != null
           ? List<String>.from(json['childIds'] as List)
           : const [],
@@ -48,6 +51,7 @@ class UserModel {
       'displayName': displayName,
       'role': role.toString(),
       'classId': classId,
+      'kindergartenId': kindergartenId, // 追加
       'childIds': childIds,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
@@ -60,6 +64,7 @@ class UserModel {
     String? displayName,
     UserRole? role,
     String? classId,
+    String? kindergartenId, // 追加
     DateTime? updatedAt,
   }) {
     return UserModel(
@@ -68,6 +73,8 @@ class UserModel {
       displayName: displayName ?? this.displayName,
       role: role ?? this.role,
       classId: classId ?? this.classId,
+      kindergartenId: kindergartenId ?? this.kindergartenId, // 追加
+      childIds: childIds,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

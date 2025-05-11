@@ -3,6 +3,7 @@ class ChildModel {
   final String name;
   final int? age;
   final String? classId;
+  final String? kindergartenId; // 追加
   final List<String> parentIds;
 
   ChildModel({
@@ -10,6 +11,7 @@ class ChildModel {
     required this.name,
     this.age,
     this.classId,
+    this.kindergartenId, // 追加
     required this.parentIds,
   });
 
@@ -19,6 +21,7 @@ class ChildModel {
       name: json['name'] as String,
       age: json['age'] as int?,
       classId: json['classId'] as String?,
+      kindergartenId: json['kindergartenId'] as String?, // 追加
       parentIds: List<String>.from(json['parentIds'] ?? []),
     );
   }
@@ -28,6 +31,7 @@ class ChildModel {
       'name': name,
       'age': age,
       'classId': classId,
+      'kindergartenId': kindergartenId, // 追加
       'parentIds': parentIds,
     };
   }
@@ -37,6 +41,7 @@ class ChildModel {
     String? name,
     int? age,
     String? classId,
+    String? kindergartenId, // 追加
     List<String>? parentIds,
   }) {
     return ChildModel(
@@ -44,6 +49,7 @@ class ChildModel {
       name: name ?? this.name,
       age: age ?? this.age,
       classId: classId ?? this.classId,
+      kindergartenId: kindergartenId ?? this.kindergartenId, // 追加
       parentIds: parentIds ?? this.parentIds,
     );
   }

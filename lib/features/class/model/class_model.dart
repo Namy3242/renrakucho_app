@@ -4,6 +4,7 @@ class ClassModel {
   final String teacherId; // 担任の先生のID
   final List<String> studentIds; // 所属する園児のID
   final DateTime createdAt;
+  final String kindergartenId; // 追加
 
   ClassModel({
     required this.id,
@@ -11,6 +12,7 @@ class ClassModel {
     required this.teacherId,
     required this.studentIds,
     required this.createdAt,
+    required this.kindergartenId, // 追加
   });
 
   // JSONからインスタンスを生成
@@ -21,6 +23,7 @@ class ClassModel {
       teacherId: json['teacherId'] as String,
       studentIds: List<String>.from(json['studentIds'] as List),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      kindergartenId: json['kindergartenId'] as String, // 追加
     );
   }
 
@@ -31,6 +34,7 @@ class ClassModel {
       'teacherId': teacherId,
       'studentIds': studentIds,
       'createdAt': createdAt.toIso8601String(),
+      'kindergartenId': kindergartenId, // 追加
     };
   }
 
@@ -40,6 +44,7 @@ class ClassModel {
     String? teacherId,
     List<String>? studentIds,
     DateTime? createdAt,
+    String? kindergartenId, // 追加
   }) {
     return ClassModel(
       id: id,
@@ -47,6 +52,7 @@ class ClassModel {
       teacherId: teacherId ?? this.teacherId,
       studentIds: studentIds ?? this.studentIds,
       createdAt: createdAt ?? this.createdAt,
+      kindergartenId: kindergartenId ?? this.kindergartenId, // 追加
     );
   }
 }
