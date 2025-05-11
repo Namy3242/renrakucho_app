@@ -19,4 +19,19 @@ class UserRepository {
       rethrow;
     }
   }
+
+  Future<List<UserModel>> getParents() async {
+    try {
+      final snapshot = await _usersRef
+          .where('role', isEqualTo: UserRole.parent.toString())
+          .orderBy('displayName')
+          .get();
+      return snapshot.docs
+          .map((doc) => UserModel.fromJson(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print('Error getting parents: $e');
+      rethrow;
+    }
+  }
 }

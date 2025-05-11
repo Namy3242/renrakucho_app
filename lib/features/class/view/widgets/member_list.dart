@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/view_model/user_provider.dart';
+import '../../../child/view/child_edit_dialog.dart';
 import '../../view_model/class_view_model.dart';
 import 'add_member_dialog.dart';
+import '../../../child/view_model/child_provider.dart'; // 園児Providerをインポート
+import '../../../child/model/child_model.dart';
 
 class MemberList extends ConsumerWidget {
   const MemberList({
@@ -92,6 +95,9 @@ class MemberList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // studentIdsからnullでない園児のみカウント・表示
+    final memberFutures = studentIds.map((id) => ref.watch(childProvider(id).future)).toList();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -113,51 +119,54 @@ class MemberList extends ConsumerWidget {
               ],
             ),
             const Divider(),
-            if (studentIds.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('メンバーがいません'),
-                ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: studentIds.length,
-                itemBuilder: (context, index) {
-                  final userId = studentIds[index];
-                  return ref.watch(userProvider(userId)).when(
-                    data: (user) {
-                      if (user == null) return const SizedBox.shrink();
-                      return ListTile(
-                        leading: CircleAvatar(
-                          child: Text(
-                            user.displayName?.characters.first ?? '?',
-                          ),
-                        ),
-                        title: Text(user.displayName ?? '不明なユーザー'),
-                        trailing: canEdit
-                            ? IconButton(
-                                icon: const Icon(Icons.remove_circle_outline),
-                                onPressed: () => _confirmRemoveMember(
-                                  context,
-                                  ref,
-                                  userId,
-                                ),
-                              )
-                            : null,
-                      );
-                    },
-                    loading: () => const ListTile(
-                      title: Text('読み込み中...'),
-                    ),
-                    error: (_, __) => const ListTile(
-                      title: Text('エラー'),
+            FutureBuilder<List<ChildModel?>>(
+              future: Future.wait(memberFutures),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final children = snapshot.data!
+                    .where((child) => child != null)
+                    .toList();
+
+                if (children.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('メンバーがいません'),
                     ),
                   );
-                },
-              ),
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: children.length,
+                  itemBuilder: (context, index) {
+                    final child = children[index]!;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Text(
+                          child.name.characters.first,
+                        ),
+                      ),
+                      title: Text(child.name),
+                      subtitle: Text('年齢: ${child.age ?? '-'}'),
+                      trailing: canEdit
+                          ? IconButton(
+                              icon: const Icon(Icons.remove_circle_outline),
+                              onPressed: () => _confirmRemoveMember(
+                                context,
+                                ref,
+                                child.id,
+                              ),
+                            )
+                          : null,
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),

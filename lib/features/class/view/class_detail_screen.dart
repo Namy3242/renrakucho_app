@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';  // Add this import
 import 'package:renrakucho_app/features/class/view/class_edit_screen.dart';
 import '../../auth/view_model/user_provider.dart';
+import '../../child/model/child_model.dart';
+import '../../child/view_model/child_provider.dart';
 import '../../class/view_model/class_view_model.dart';
 import '../../auth/view_model/auth_view_model.dart';
 import '../repository/class_repository_provider.dart'; // 修正されたパス
@@ -117,7 +119,20 @@ class ClassDetailScreen extends ConsumerWidget {
                         ListTile(
                           leading: const Icon(Icons.groups),
                           title: const Text('生徒数'),
-                          subtitle: Text('${classModel.studentIds.length}人'),
+                          subtitle: FutureBuilder<List<ChildModel?>>(
+                            future: Future.wait(
+                              classModel.studentIds.map((id) => ref.watch(childProvider(id).future)),
+                            ),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const Text('読み込み中...');
+                              }
+                              final count = snapshot.data!
+                                  .where((child) => child != null)
+                                  .length;
+                              return Text('$count人');
+                            },
+                          ),
                         ),
                       ],
                     ),

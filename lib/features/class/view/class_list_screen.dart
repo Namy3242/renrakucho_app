@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/model/user_role.dart';
 import '../../auth/view_model/auth_view_model.dart';
+import '../../child/model/child_model.dart';
+import '../../child/view_model/child_provider.dart';
 import '../../class/view_model/class_view_model.dart';
 import '../../../core/widgets/loading_overlay.dart';
 import '../../../core/utils/permission_utils.dart';
@@ -36,42 +38,53 @@ class ClassListScreen extends ConsumerWidget {
               itemCount: classes.length,
               itemBuilder: (context, index) {
                 final classModel = classes[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: ListTile(
-                    title: Text(classModel.name),
-                    subtitle: Text('生徒数: ${classModel.studentIds.length}人'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        currentUser.whenOrNull(
-                          data: (user) => user != null && PermissionUtils.canManageClass(user.role)
-                              ? IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () {
-                                    if (PermissionUtils.canEditClass(
-                                      user.role,
-                                      teacherId: classModel.teacherId,
-                                      userId: user.id,
-                                    )) {
-                                      if (context.mounted) context.push('/classes/${classModel.id}/edit');
-                                    } else {
-                                      PermissionUtils.showNoPermissionDialog(context);
-                                    }
-                                  },
-                                )
-                              : null,
-                        ) ?? const SizedBox.shrink(),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
-                    onTap: () {
-                      if (context.mounted) context.push('/classes/${classModel.id}');
-                    },
-                  ),
+                final memberFutures = classModel.studentIds.map((id) => ref.watch(childProvider(id).future)).toList();
+
+                return FutureBuilder<List<ChildModel?>>(
+                  future: Future.wait(memberFutures),
+                  builder: (context, snapshot) {
+                    int realCount = 0;
+                    if (snapshot.hasData) {
+                      realCount = snapshot.data!.where((child) => child != null).length;
+                    }
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: ListTile(
+                        title: Text(classModel.name),
+                        subtitle: Text('生徒数: $realCount人'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            currentUser.whenOrNull(
+                              data: (user) => user != null && PermissionUtils.canManageClass(user.role)
+                                  ? IconButton(
+                                      icon: const Icon(Icons.edit),
+                                      onPressed: () {
+                                        if (PermissionUtils.canEditClass(
+                                          user.role,
+                                          teacherId: classModel.teacherId,
+                                          userId: user.id,
+                                        )) {
+                                          if (context.mounted) context.push('/classes/${classModel.id}/edit');
+                                        } else {
+                                          PermissionUtils.showNoPermissionDialog(context);
+                                        }
+                                      },
+                                    )
+                                  : null,
+                            ) ?? const SizedBox.shrink(),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        ),
+                        onTap: () {
+                          if (context.mounted) context.push('/classes/${classModel.id}');
+                        },
+                      ),
+                    );
+                  },
                 );
               },
             ),
