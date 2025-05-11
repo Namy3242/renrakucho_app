@@ -18,6 +18,9 @@ import '../features/post/view/post_detail_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../features/child/view/child_list_screen.dart';
+import '../features/auth/view/parent_list_screen.dart';
+import '../features/auth/view/teacher_list_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -87,6 +90,18 @@ final appRouter = GoRouter(
       builder: (context, state) => PostDetailScreen(
         postId: state.pathParameters['id']!,
       ),
+    ),
+    GoRoute(
+      path: '/children',
+      builder: (context, state) => const ChildListScreen(),
+    ),
+    GoRoute(
+      path: '/parents',
+      builder: (context, state) => const ParentListScreen(),
+    ),
+    GoRoute(
+      path: '/teachers',
+      builder: (context, state) => const TeacherListScreen(),
     ),
   ],
 );

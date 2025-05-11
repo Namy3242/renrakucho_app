@@ -50,6 +50,7 @@ class HomeScreen extends ConsumerWidget {
             child: const Icon(Icons.add),
           ),
           bottomNavigationBar: NavigationBar(
+            selectedIndex: 0,  // ホーム画面を選択状態に
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home),
@@ -58,6 +59,18 @@ class HomeScreen extends ConsumerWidget {
               NavigationDestination(
                 icon: Icon(Icons.class_),
                 label: 'クラス',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.child_care),
+                label: '園児',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.people),
+                label: '保護者',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.school),
+                label: '保育者',
               ),
               NavigationDestination(
                 icon: Icon(Icons.person),
@@ -73,6 +86,15 @@ class HomeScreen extends ConsumerWidget {
                   if (context.mounted) context.go('/classes');
                   break;
                 case 2:
+                  if (context.mounted) context.go('/children');
+                  break;
+                case 3:
+                  if (context.mounted) context.go('/parents');
+                  break;
+                case 4:
+                  if (context.mounted) context.go('/teachers');
+                  break;
+                case 5:
                   // TODO: プロフィール画面への遷移を実装
                   break;
               }

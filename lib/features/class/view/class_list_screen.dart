@@ -106,18 +106,12 @@ class ClassListScreen extends ConsumerWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: 1, // クラス画面を選択状態に
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home),
-            label: 'ホーム',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.class_),
-            label: 'クラス',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person),
-            label: 'プロフィール',
-          ),
+          NavigationDestination(icon: Icon(Icons.home), label: 'ホーム'),
+          NavigationDestination(icon: Icon(Icons.class_), label: 'クラス'),
+          NavigationDestination(icon: Icon(Icons.child_care), label: '園児'),
+          NavigationDestination(icon: Icon(Icons.people), label: '保護者'),
+          NavigationDestination(icon: Icon(Icons.school), label: '保育者'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'プロフィール'),
         ],
         onDestinationSelected: (index) {
           switch (index) {
@@ -128,6 +122,15 @@ class ClassListScreen extends ConsumerWidget {
               context.go('/classes');
               break;
             case 2:
+              context.go('/children');
+              break;
+            case 3:
+              context.go('/parents');
+              break;
+            case 4:
+              context.go('/teachers');
+              break;
+            case 5:
               // TODO: プロフィール画面への遷移を実装
               break;
           }
