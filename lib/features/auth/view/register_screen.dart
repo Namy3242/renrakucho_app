@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../model/user_role.dart';
 import '../view_model/auth_view_model.dart';
+import '../../kindergarten/repository/kindergarten_repository_provider.dart'; // 追加
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -16,8 +17,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _displayNameController = TextEditingController();
+  final _kindergartenIdController = TextEditingController(); // 園ID入力用
+  final _inviteCodeController = TextEditingController(); // 招待コード入力用
   bool _isLoading = false;
-  UserRole _selectedRole = UserRole.parent;
+  UserRole _selectedRole = UserRole.admin; // デフォルトを管理者に
 
   @override
   void dispose() {
@@ -25,6 +28,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _displayNameController.dispose();
+    _kindergartenIdController.dispose();
+    _inviteCodeController.dispose();
     super.dispose();
   }
 
@@ -38,21 +43,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      if (_selectedRole == UserRole.parent) {
-        await ref.read(authViewModelProvider.notifier).registerParent(
-              email: _emailController.text,
-              password: _passwordController.text,
-              displayName: _displayNameController.text,
-            );
-      } else {
+      if (_selectedRole == UserRole.admin) {
+        await ref.read(authViewModelProvider.notifier).registerAdmin(
+          email: _emailController.text,
+          password: _passwordController.text,
+          displayName: _displayNameController.text,
+        );
+      } else if (_selectedRole == UserRole.teacher) {
+        // 保育者は園ID必須
+        final kindergartenId = _kindergartenIdController.text.trim();
+        final exists = await ref.read(kindergartenRepositoryProvider).exists(kindergartenId);
+        if (!exists) throw Exception('園IDが正しくありません');
         await ref.read(authViewModelProvider.notifier).registerTeacher(
-              email: _emailController.text,
-              password: _passwordController.text,
-              displayName: _displayNameController.text,
-            );
+          email: _emailController.text,
+          password: _passwordController.text,
+          displayName: _displayNameController.text,
+          kindergartenId: kindergartenId,
+        );
+      } else if (_selectedRole == UserRole.parent) {
+        // 保護者は招待コード必須
+        final inviteCode = _inviteCodeController.text.trim();
+        // 招待コードの検証・園児との紐付け処理をここで実装（例: API呼び出しやFirestore検索）
+        final inviteResult = await ref.read(authViewModelProvider.notifier).registerParentWithInvite(
+          email: _emailController.text,
+          password: _passwordController.text,
+          displayName: _displayNameController.text,
+          inviteCode: inviteCode,
+        );
+        if (!inviteResult) throw Exception('招待コードが正しくありません');
       }
       if (mounted) {
-        Navigator.of(context).pop(); // 登録成功後はログイン画面に戻る
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (!mounted) return;
@@ -97,6 +118,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   SegmentedButton<UserRole>(
                     segments: const [
                       ButtonSegment(
+                        value: UserRole.admin,
+                        label: Text('管理者'),
+                        icon: Icon(Icons.admin_panel_settings),
+                      ),
+                      ButtonSegment(
                         value: UserRole.parent,
                         label: Text('保護者'),
                         icon: Icon(Icons.person),
@@ -112,6 +138,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       setState(() => _selectedRole = role.first);
                     },
                   ),
+                  if (_selectedRole == UserRole.teacher)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: TextFormField(
+                        controller: _kindergartenIdController,
+                        decoration: const InputDecoration(
+                          labelText: '園ID（管理者から発行されたIDを入力）',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.qr_code),
+                        ),
+                        validator: (value) {
+                          if (_selectedRole == UserRole.teacher && (value == null || value.isEmpty)) {
+                            return '園IDを入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  if (_selectedRole == UserRole.parent)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: TextFormField(
+                        controller: _inviteCodeController,
+                        decoration: const InputDecoration(
+                          labelText: '招待コード（管理者から発行されたコードを入力）',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.vpn_key),
+                        ),
+                        validator: (value) {
+                          if (_selectedRole == UserRole.parent && (value == null || value.isEmpty)) {
+                            return '招待コードを入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,

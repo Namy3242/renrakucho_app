@@ -31,10 +31,30 @@ class AuthViewModel extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  Future<void> registerAdmin({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    try {
+      state = const AsyncValue.loading();
+      await _repository.registerAdmin(
+        email: email,
+        password: password,
+        displayName: displayName,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      rethrow;
+    }
+  }
+
   Future<void> registerParent({
     required String email,
     required String password,
     required String displayName,
+    required String kindergartenId, // 修正
     String? classId,
   }) async {
     try {
@@ -43,6 +63,7 @@ class AuthViewModel extends StateNotifier<AsyncValue<void>> {
         email: email,
         password: password,
         displayName: displayName,
+        kindergartenId: kindergartenId, // 修正
         classId: classId,
       );
       state = const AsyncValue.data(null);
@@ -52,10 +73,33 @@ class AuthViewModel extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  Future<bool> registerParentWithInvite({
+    required String email,
+    required String password,
+    required String displayName,
+    required String inviteCode,
+  }) async {
+    try {
+      state = const AsyncValue.loading();
+      final result = await _repository.registerParentWithInvite(
+        email: email,
+        password: password,
+        displayName: displayName,
+        inviteCode: inviteCode,
+      );
+      state = const AsyncValue.data(null);
+      return result;
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      return false;
+    }
+  }
+
   Future<void> registerTeacher({
     required String email,
     required String password,
     required String displayName,
+    required String kindergartenId, // 修正
     String? classId,
   }) async {
     try {
@@ -64,9 +108,28 @@ class AuthViewModel extends StateNotifier<AsyncValue<void>> {
         email: email,
         password: password,
         displayName: displayName,
+        kindergartenId: kindergartenId, // 修正
         classId: classId,
       );
       state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      rethrow;
+    }
+  }
+
+  Future<String> createInviteCode({
+    required String kindergartenId,
+    required String childId,
+  }) async {
+    try {
+      state = const AsyncValue.loading();
+      final code = await _repository.createInviteCode(
+        kindergartenId: kindergartenId,
+        childId: childId,
+      );
+      state = const AsyncValue.data(null);
+      return code;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;

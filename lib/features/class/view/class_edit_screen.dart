@@ -28,15 +28,14 @@ class ClassEditScreen extends ConsumerStatefulWidget {
 class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  String? _selectedTeacherId;
+  late List<String> _selectedTeacherIds;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.classModel.name);
-    _selectedTeacherId = widget.classModel.teacherId ??
-        ref.read(currentUserProvider).value?.id;  // 修正
+    _selectedTeacherIds = List<String>.from(widget.classModel.teacherIds);
   }
 
   @override
@@ -53,7 +52,7 @@ class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
     try {
       final updatedClass = widget.classModel.copyWith(
         name: _nameController.text.trim(),
-        teacherId: _selectedTeacherId,
+        teacherIds: _selectedTeacherIds,
       );
 
       await ref.read(classViewModelProvider.notifier).updateClass(updatedClass);
@@ -113,22 +112,24 @@ class _ClassEditScreenState extends ConsumerState<ClassEditScreen> {
                   ),
                   const SizedBox(height: 16),
                   teachers.when(
-                    data: (teachersList) => DropdownButtonFormField<String>(
-                      value: _selectedTeacherId,
-                      decoration: const InputDecoration(
-                        labelText: '担任',
-                      ),
-                      items: teachersList.map((teacher) {
-                        return DropdownMenuItem(
-                          value: teacher.id,
-                          child: Text(teacher.displayName ?? '名前なし'),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTeacherId = value;
-                        });
-                      },
+                    data: (teachersList) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('担任（複数選択可）'),
+                        ...teachersList.map((teacher) => CheckboxListTile(
+                              value: _selectedTeacherIds.contains(teacher.id),
+                              title: Text(teacher.displayName ?? '名前なし'),
+                              onChanged: (checked) {
+                                setState(() {
+                                  if (checked == true) {
+                                    _selectedTeacherIds.add(teacher.id);
+                                  } else {
+                                    _selectedTeacherIds.remove(teacher.id);
+                                  }
+                                });
+                              },
+                            )),
+                      ],
                     ),
                     loading: () => const CircularProgressIndicator(),
                     error: (_, __) => const Text('教師一覧の取得に失敗しました'),

@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../model/class_model.dart';
 import '../repository/class_repository.dart';
 import '../repository/class_repository_provider.dart';
+import '../../child/view_model/child_view_model.dart';
+import '../../child/view_model/child_provider.dart';
+import '../../child/model/child_model.dart'; // 追加
 
 final classViewModelProvider = StateNotifierProvider<ClassViewModel, AsyncValue<List<ClassModel>>>(
   (ref) => ClassViewModel(ref.watch(classRepositoryProvider)),
@@ -27,16 +30,18 @@ class ClassViewModel extends StateNotifier<AsyncValue<List<ClassModel>>> {
 
   Future<void> createClass({
     required String name,
-    required String teacherId,
+    required List<String> teacherIds, // 変更
+    required String kindergartenId,
     List<String> studentIds = const [],
   }) async {
     try {
       final classModel = ClassModel(
         id: '',
         name: name,
-        teacherId: teacherId,
+        teacherIds: teacherIds, // 変更
         studentIds: studentIds,
         createdAt: DateTime.now(),
+        kindergartenId: kindergartenId,
       );
       await _repository.createClass(classModel);
     } catch (e, stack) {
@@ -63,6 +68,14 @@ class ClassViewModel extends StateNotifier<AsyncValue<List<ClassModel>>> {
   Future<void> addMember(String classId, String studentId) async {
     try {
       await _repository.addMember(classId, studentId);
+      // studentIdの園児のclassIdも更新
+      final container = ProviderContainer();
+      final child = await container.read(childProvider(studentId).future);
+      if (child != null && child.classId != classId) {
+        final updated = child.copyWith(classId: classId);
+        await container.read(childViewModelProvider.notifier).updateChild(updated);
+      }
+      container.dispose();
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }

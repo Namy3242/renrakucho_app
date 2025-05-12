@@ -7,6 +7,7 @@ import '../../auth/model/user_role.dart';
 import '../../auth/model/user_model.dart';
 import '../../auth/repository/user_repository.dart';
 import '../../auth/repository/user_repository_provider.dart';
+import '../../kindergarten/view/kindergarten_selector.dart';
 
 final teachersProvider = FutureProvider<List<UserModel>>((ref) async {
   return await ref.read(userRepositoryProvider).getTeachers();
@@ -23,12 +24,15 @@ class _ClassCreateScreenState extends ConsumerState<ClassCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   bool _isLoading = false;
-  String? _selectedTeacherId;
+  List<String> _selectedTeacherIds = [];
 
   @override
   void initState() {
     super.initState();
-    _selectedTeacherId = ref.read(currentUserProvider).value?.id;
+    final currentUserId = ref.read(currentUserProvider).value?.id;
+    if (currentUserId != null) {
+      _selectedTeacherIds = [currentUserId];
+    }
   }
 
   @override
@@ -46,9 +50,19 @@ class _ClassCreateScreenState extends ConsumerState<ClassCreateScreen> {
       final currentUser = ref.read(currentUserProvider).value;
       if (currentUser == null) return;
 
+      // 管理者は選択中の園IDを使う
+      final kindergartenId = currentUser.role.name == 'admin'
+          ? ref.read(selectedKindergartenIdProvider)
+          : currentUser.kindergartenId;
+
+      if (kindergartenId == null || kindergartenId.isEmpty) {
+        throw Exception('園が選択されていません');
+      }
+
       await ref.read(classViewModelProvider.notifier).createClass(
             name: _nameController.text.trim(),
-            teacherId: _selectedTeacherId ?? currentUser.id,
+            teacherIds: _selectedTeacherIds,
+            kindergartenId: kindergartenId,
           );
 
       if (mounted) {
@@ -106,23 +120,24 @@ class _ClassCreateScreenState extends ConsumerState<ClassCreateScreen> {
                   ),
                   const SizedBox(height: 16),
                   teachers.when(
-                    data: (teachersList) => DropdownButtonFormField<String>(
-                      value: _selectedTeacherId,
-                      decoration: const InputDecoration(
-                        labelText: '担任',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: teachersList.map((teacher) {
-                        return DropdownMenuItem(
-                          value: teacher.id,
-                          child: Text(teacher.displayName ?? '名前なし'),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTeacherId = value;
-                        });
-                      },
+                    data: (teachersList) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('担任（複数選択可）'),
+                        ...teachersList.map((teacher) => CheckboxListTile(
+                              value: _selectedTeacherIds.contains(teacher.id),
+                              title: Text(teacher.displayName ?? '名前なし'),
+                              onChanged: (checked) {
+                                setState(() {
+                                  if (checked == true) {
+                                    _selectedTeacherIds.add(teacher.id);
+                                  } else {
+                                    _selectedTeacherIds.remove(teacher.id);
+                                  }
+                                });
+                              },
+                            )),
+                      ],
                     ),
                     loading: () => const CircularProgressIndicator(),
                     error: (_, __) => const Text('教師一覧の取得に失敗しました'),

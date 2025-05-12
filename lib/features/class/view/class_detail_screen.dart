@@ -12,6 +12,8 @@ import '../model/class_model.dart'; // Ensure this is the correct path to ClassM
 import '../../auth/model/user_role.dart';
 import '../../../core/widgets/loading_overlay.dart';
 import 'widgets/member_list.dart';
+import '../../kindergarten/model/kindergarten_model.dart';
+import '../../kindergarten/repository/kindergarten_repository_provider.dart';
 
 final selectedClassProvider = FutureProvider.family<ClassModel?, String>((ref, classId) async {
   return await ref.watch(classRepositoryProvider).getClassById(classId);
@@ -84,6 +86,8 @@ class ClassDetailScreen extends ConsumerWidget {
             );
           }
 
+          final kindergartenAsync = ref.watch(_kindergartenProvider(classModel.kindergartenId));
+
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(selectedClassProvider(classId));
@@ -108,13 +112,18 @@ class ClassDetailScreen extends ConsumerWidget {
                           subtitle: Text(classModel.name),
                         ),
                         ListTile(
-                          leading: const Icon(Icons.person),
-                          title: const Text('担任'),
-                          subtitle: ref.watch(userProvider(classModel.teacherId)).when(
-                            data: (teacher) => Text(teacher?.displayName ?? '不明'),
+                          leading: const Icon(Icons.business),
+                          title: const Text('園名'),
+                          subtitle: kindergartenAsync.when(
+                            data: (kg) => Text(kg?.name ?? '不明'),
                             loading: () => const Text('読み込み中...'),
                             error: (_, __) => const Text('エラー'),
                           ),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.person),
+                          title: const Text('担任'),
+                          subtitle: _TeachersNamesWidget(teacherIds: classModel.teacherIds),
                         ),
                         ListTile(
                           leading: const Icon(Icons.groups),
@@ -195,5 +204,34 @@ class ClassDetailScreen extends ConsumerWidget {
         }
       }
     }
+  }
+
+  // 園情報取得Provider
+  static final _kindergartenProvider = FutureProvider.family<KindergartenModel?, String>((ref, kindergartenId) async {
+    final repo = ref.read(kindergartenRepositoryProvider);
+    final doc = await repo.getKindergartenById(kindergartenId);
+    return doc;
+  });
+}
+
+// 複数担任名表示用ウィジェット
+class _TeachersNamesWidget extends ConsumerWidget {
+  final List<String> teacherIds;
+  const _TeachersNamesWidget({required this.teacherIds});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (teacherIds.isEmpty) return const Text('未設定');
+    return FutureBuilder<List<String>>(
+      future: () async {
+        final futures = teacherIds.map((id) => ref.read(userProvider(id).future)).toList();
+        final users = await Future.wait(futures);
+        return users.map((u) => u?.displayName ?? u?.email ?? '不明').toList();
+      }(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Text('読み込み中...');
+        return Text(snapshot.data!.join(', '));
+      },
+    );
   }
 }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/view_model/auth_view_model.dart';
 import '../../post/view/post_list_screen.dart';
 import '../../post/view/post_create_screen.dart';
+import '../../kindergarten/view/kindergarten_create_screen.dart';
+import '../../kindergarten/view/kindergarten_selector.dart';
 import '../../../core/widgets/loading_overlay.dart';
 import 'package:go_router/go_router.dart';
 
@@ -36,13 +38,32 @@ class HomeScreen extends ConsumerWidget {
           appBar: AppBar(
             title: const Text('ホーム'),
             actions: [
+              if (user.role.name == 'admin')
+                IconButton(
+                  icon: const Icon(Icons.add_business),
+                  tooltip: '園登録',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const KindergartenCreateScreen()),
+                    );
+                  },
+                ),
               IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: () => _handleLogout(context, ref),
               ),
             ],
           ),
-          body: const PostListScreen(),
+          body: Column(
+            children: [
+              if (user.role.name == 'admin')
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: KindergartenSelector(),
+                ),
+              const Expanded(child: PostListScreen()),
+            ],
+          ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
               context.push('/posts/create');  // MaterialRouteから変更
@@ -50,7 +71,6 @@ class HomeScreen extends ConsumerWidget {
             child: const Icon(Icons.add),
           ),
           bottomNavigationBar: NavigationBar(
-            selectedIndex: 0,  // ホーム画面を選択状態に
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home),

@@ -5,6 +5,7 @@ import '../../../auth/model/user_role.dart';
 import '../../../auth/model/user_model.dart';
 import '../../../auth/repository/auth_repository_provider.dart';
 import '../../../auth/repository/user_repository_provider.dart';
+import '../../../auth/view_model/auth_view_model.dart';
 import '../../../child/view/child_create_dialog.dart';
 import '../../../child/view_model/child_view_model.dart';
 import '../../model/class_model.dart';
@@ -13,6 +14,7 @@ import '../../../../core/widgets/loading_overlay.dart';
 import '../../../child/model/child_model.dart';
 import '../../../child/view_model/child_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../kindergarten/view/kindergarten_selector.dart';
 
 // 検索結果を管理するプロバイダー
 final searchResultsProvider = StateProvider<List<UserModel>>((ref) => []);
@@ -232,11 +234,38 @@ class _NewChildFormState extends ConsumerState<_NewChildForm> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
+      final user = ref.read(currentUserProvider).value;
+      // 管理者は選択中の園IDを使う
+      final kindergartenId = user?.role.name == 'admin'
+          ? ref.read(selectedKindergartenIdProvider)
+          : user?.kindergartenId ?? '';
+
+      if (kindergartenId == null || kindergartenId.isEmpty) {
+        if (mounted) {
+          await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('園が選択されていません'),
+              content: const Text('園を選択してください。'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('閉じる'),
+                ),
+              ],
+            ),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
       final child = ChildModel(
         id: '',
         name: _nameController.text.trim(),
         age: int.tryParse(_ageController.text),
         classId: null,
+        kindergartenId: kindergartenId,
         parentIds: _selectedParentIds,
       );
       final childId = await ref.read(childViewModelProvider.notifier).createChild(child);

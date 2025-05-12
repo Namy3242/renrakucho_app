@@ -6,9 +6,9 @@ class PermissionUtils {
     return role == UserRole.teacher || role == UserRole.admin;
   }
 
-  static bool canEditClass(UserRole? role, {String? teacherId, String? userId}) {
+  static bool canEditClass(UserRole? role, {List<String>? teacherIds, String? userId}) {
     if (role == UserRole.admin) return true;
-    if (role == UserRole.teacher && teacherId == userId) return true;
+    if (role == UserRole.teacher && teacherIds != null && userId != null && teacherIds.contains(userId)) return true;
     return false;
   }
 

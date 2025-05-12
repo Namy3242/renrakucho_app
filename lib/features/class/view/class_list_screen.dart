@@ -63,11 +63,12 @@ class ClassListScreen extends ConsumerWidget {
                                   ? IconButton(
                                       icon: const Icon(Icons.edit),
                                       onPressed: () {
-                                        if (PermissionUtils.canEditClass(
+                                        final isEditable = PermissionUtils.canEditClass(
                                           user.role,
-                                          teacherId: classModel.teacherId,
+                                          teacherIds: classModel.teacherIds,
                                           userId: user.id,
-                                        )) {
+                                        );
+                                        if (isEditable) {
                                           if (context.mounted) context.push('/classes/${classModel.id}/edit');
                                         } else {
                                           PermissionUtils.showNoPermissionDialog(context);

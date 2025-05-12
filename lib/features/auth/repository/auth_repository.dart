@@ -21,11 +21,32 @@ class AuthRepository {
     );
   }
 
+  // 管理者登録用のメソッド
+  Future<void> registerAdmin({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    // 管理者は園IDを自分で作成後に設定する想定なので、ここでは空文字列や仮IDでも可
+    await _usersRef.doc(credential.user!.uid).set({
+      'email': email,
+      'displayName': displayName,
+      'role': UserRole.admin.toString(),
+      'kindergartenId': '', // 管理者は園作成後に設定
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+  }
+
   // ユーザー登録（保護者用）
   Future<void> registerParent({
     required String email,
     required String password,
     required String displayName,
+    required String kindergartenId, // 修正
     String? classId,
   }) async {
     // Firebaseで認証用のユーザーを作成
@@ -39,9 +60,56 @@ class AuthRepository {
       'email': email,
       'displayName': displayName,
       'role': UserRole.parent.toString(),
+      'kindergartenId': kindergartenId, // 修正
       'classId': classId,
       'createdAt': DateTime.now().toIso8601String(),
     });
+  }
+
+  // 招待コードによる保護者登録
+  Future<bool> registerParentWithInvite({
+    required String email,
+    required String password,
+    required String displayName,
+    required String inviteCode,
+  }) async {
+    // 1. 招待コードをFirestore等で検証し、園ID・childId等を取得
+    final inviteSnapshot = await FirebaseFirestore.instance
+        .collection('invites')
+        .doc(inviteCode)
+        .get();
+    if (!inviteSnapshot.exists) {
+      return false;
+    }
+    final inviteData = inviteSnapshot.data()!;
+    final kindergartenId = inviteData['kindergartenId'] as String?;
+    final childId = inviteData['childId'] as String?;
+    if (kindergartenId == null || childId == null) {
+      return false;
+    }
+
+    // 2. Firebase Authでユーザー作成
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    // 3. Firestoreにユーザー情報を保存し、childIdをchildIdsに追加
+    await _usersRef.doc(credential.user!.uid).set({
+      'email': email,
+      'displayName': displayName,
+      'role': UserRole.parent.toString(),
+      'kindergartenId': kindergartenId,
+      'childIds': [childId],
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+
+    // 4. 招待コードを無効化（削除）
+    await inviteSnapshot.reference.delete();
+
+    // 5. 必要に応じてchildドキュメントのparentIdsにこのユーザーIDを追加する処理も実装
+
+    return true;
   }
 
   // 保育者登録用のメソッド
@@ -49,6 +117,7 @@ class AuthRepository {
     required String email,
     required String password,
     required String displayName,
+    required String kindergartenId, // 修正
     String? classId,
   }) async {
     try {
@@ -61,12 +130,34 @@ class AuthRepository {
         'email': email,
         'displayName': displayName,
         'role': UserRole.teacher.toString(),
+        'kindergartenId': kindergartenId, // 修正
         'classId': classId,
         'createdAt': DateTime.now().toIso8601String(),
       });
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
     }
+  }
+
+  /// 招待コードを発行（管理者用）
+  Future<String> createInviteCode({
+    required String kindergartenId,
+    required String childId,
+  }) async {
+    // ランダムなコード生成（例: 8桁英数字）
+    final code = _generateRandomCode(8);
+    await FirebaseFirestore.instance.collection('invites').doc(code).set({
+      'kindergartenId': kindergartenId,
+      'childId': childId,
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+    return code;
+  }
+
+  String _generateRandomCode(int length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rand = DateTime.now().millisecondsSinceEpoch;
+    return List.generate(length, (i) => chars[(rand + i * 31) % chars.length]).join();
   }
 
   // 現在のユーザー情報を取得
