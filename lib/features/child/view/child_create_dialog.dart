@@ -219,14 +219,6 @@ class _ChildCreateDialogState extends ConsumerState<ChildCreateDialog> {
                           });
                         },
                       )),
-                  if (_selectedParentIds.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                        '※保護者を1人以上選択してください',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
                 ],
               ),
               loading: () => const CircularProgressIndicator(),
@@ -245,10 +237,6 @@ class _ChildCreateDialogState extends ConsumerState<ChildCreateDialog> {
               ? null
               : () async {
                   if (!_formKey.currentState!.validate()) return;
-                  if (_selectedParentIds.isEmpty) {
-                    setState(() {}); // エラー表示のため再描画
-                    return;
-                  }
                   await _createChild();
                 },
           child: const Text('作成'),

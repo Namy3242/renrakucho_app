@@ -9,6 +9,7 @@ import '../view_model/child_view_model.dart';
 import '../view/child_create_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import '../../auth/view_model/auth_view_model.dart'; // 追加
 
 class ChildListScreen extends ConsumerWidget {
   const ChildListScreen({super.key});
@@ -121,40 +122,12 @@ class ChildListScreen extends ConsumerWidget {
         builder: (context, ref, _) {
           final children = ref.watch(allChildrenProvider).value ?? [];
           final unlinked = children.where((c) => c.parentIds.isEmpty).length;
+          final currentUser = ref.watch(currentUserProvider).value;
           return NavigationBar(
-            selectedIndex: 2,
-            destinations: [
-              const NavigationDestination(icon: Icon(Icons.home), label: 'ホーム'),
-              const NavigationDestination(icon: Icon(Icons.class_), label: 'クラス'),
-              NavigationDestination(
-                icon: Stack(
-                  children: [
-                    const Icon(Icons.child_care),
-                    if (unlinked > 0)
-                      Positioned(
-                        right: 0, top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red, shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                          child: Text(
-                            '$unlinked',
-                            style: const TextStyle(
-                              color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                label: '園児',
-              ),
-              const NavigationDestination(icon: Icon(Icons.people), label: '保護者'),
-              const NavigationDestination(icon: Icon(Icons.school), label: '保育者'),
-              const NavigationDestination(icon: Icon(Icons.person), label: 'プロフィール'),
+            selectedIndex: 0,
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.home), label: 'ホーム'),
+              NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
             ],
             onDestinationSelected: (index) {
               switch (index) {
@@ -162,19 +135,50 @@ class ChildListScreen extends ConsumerWidget {
                   GoRouter.of(context).go('/home');
                   break;
                 case 1:
-                  GoRouter.of(context).go('/classes');
-                  break;
-                case 2:
-                  GoRouter.of(context).go('/children');
-                  break;
-                case 3:
-                  GoRouter.of(context).go('/parents');
-                  break;
-                case 4:
-                  GoRouter.of(context).go('/teachers');
-                  break;
-                case 5:
-                  // TODO: プロフィール画面への遷移
+                  if (currentUser != null && (currentUser.role.name == 'admin' || currentUser.role.name == 'teacher')) {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) => SafeArea(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.class_),
+                              title: const Text('クラス'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                GoRouter.of(context).go('/classes');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.child_care),
+                              title: const Text('園児'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                GoRouter.of(context).go('/children');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.people),
+                              title: const Text('保護者'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                GoRouter.of(context).go('/parents');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.school),
+                              title: const Text('保育者'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                GoRouter.of(context).go('/teachers');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
                   break;
               }
             },

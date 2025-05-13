@@ -38,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
           appBar: AppBar(
             title: const Text('ホーム'),
             actions: [
-              if (user.role.name == 'admin')
+              if (user.role.toString() == 'UserRole.admin')
                 IconButton(
                   icon: const Icon(Icons.add_business),
                   tooltip: '園登録',
@@ -56,7 +56,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           body: Column(
             children: [
-              if (user.role.name == 'admin')
+              if (user.role.toString() == 'UserRole.admin')
                 const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: KindergartenSelector(),
@@ -66,35 +66,20 @@ class HomeScreen extends ConsumerWidget {
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              context.push('/posts/create');  // MaterialRouteから変更
+              context.push('/posts/create');
             },
             child: const Icon(Icons.add),
           ),
           bottomNavigationBar: NavigationBar(
+            selectedIndex: 0,
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home),
                 label: 'ホーム',
               ),
               NavigationDestination(
-                icon: Icon(Icons.class_),
-                label: 'クラス',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.child_care),
-                label: '園児',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.people),
-                label: '保護者',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.school),
-                label: '保育者',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person),
-                label: 'プロフィール',
+                icon: Icon(Icons.settings),
+                label: '設定',
               ),
             ],
             onDestinationSelected: (index) {
@@ -103,19 +88,8 @@ class HomeScreen extends ConsumerWidget {
                   if (context.mounted) context.go('/home');
                   break;
                 case 1:
-                  if (context.mounted) context.go('/classes');
-                  break;
-                case 2:
-                  if (context.mounted) context.go('/children');
-                  break;
-                case 3:
-                  if (context.mounted) context.go('/parents');
-                  break;
-                case 4:
-                  if (context.mounted) context.go('/teachers');
-                  break;
-                case 5:
-                  // TODO: プロフィール画面への遷移を実装
+                  // 設定ボタン押下時
+                  _showQuickMenu(context, user);
                   break;
               }
             },
@@ -126,6 +100,56 @@ class HomeScreen extends ConsumerWidget {
       error: (error, _) => Scaffold(
         body: Center(
           child: Text('エラーが発生しました: $error'),
+        ),
+      ),
+    );
+  }
+
+  void _showQuickMenu(BuildContext context, user) {
+    if (user.role == null) return;
+    if (user.role.toString() != 'UserRole.admin' && user.role.toString() != 'UserRole.teacher') {
+      // 一般ユーザーは何も表示しない
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.class_),
+              title: const Text('クラス'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/classes');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.child_care),
+              title: const Text('園児'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/children');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('保護者'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/parents');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.school),
+              title: const Text('保育者'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/teachers');
+              },
+            ),
+          ],
         ),
       ),
     );

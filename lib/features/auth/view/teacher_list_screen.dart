@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/model/user_model.dart';
 import '../../auth/repository/user_repository_provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../auth/view_model/auth_view_model.dart'; // 追加
 
 class TeacherListScreen extends ConsumerWidget {
   const TeacherListScreen({super.key});
@@ -38,37 +39,69 @@ class TeacherListScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('エラー: $e')),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 4,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'ホーム'),
-          NavigationDestination(icon: Icon(Icons.class_), label: 'クラス'),
-          NavigationDestination(icon: Icon(Icons.child_care), label: '園児'),
-          NavigationDestination(icon: Icon(Icons.people), label: '保護者'),
-          NavigationDestination(icon: Icon(Icons.school), label: '保育者'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'プロフィール'),
-        ],
-        onDestinationSelected: (index) {
-          switch (index) {
-            case 0:
-              GoRouter.of(context).go('/home');
-              break;
-            case 1:
-              GoRouter.of(context).go('/classes');
-              break;
-            case 2:
-              GoRouter.of(context).go('/children');
-              break;
-            case 3:
-              GoRouter.of(context).go('/parents');
-              break;
-            case 4:
-              GoRouter.of(context).go('/teachers');
-              break;
-            case 5:
-              // TODO: プロフィール画面への遷移
-              break;
-          }
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, _) {
+          final currentUser = ref.watch(currentUserProvider).value;
+          return NavigationBar(
+            selectedIndex: 0,
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.home), label: 'ホーム'),
+              NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
+            ],
+            onDestinationSelected: (index) {
+              switch (index) {
+                case 0:
+                  GoRouter.of(context).go('/home');
+                  break;
+                case 1:
+                  if (currentUser != null && (currentUser.role.name == 'admin' || currentUser.role.name == 'teacher')) {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) => SafeArea(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.class_),
+                              title: const Text('クラス'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                GoRouter.of(context).go('/classes');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.child_care),
+                              title: const Text('園児'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                GoRouter.of(context).go('/children');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.people),
+                              title: const Text('保護者'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                GoRouter.of(context).go('/parents');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.school),
+                              title: const Text('保育者'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                GoRouter.of(context).go('/teachers');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  break;
+              }
+            },
+          );
         },
       ),
     );
