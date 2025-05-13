@@ -120,6 +120,18 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 label: '設定',
               ),
+              const NavigationDestination(
+                icon: Icon(Icons.campaign),
+                label: '全体連絡',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.groups),
+                label: 'クラス連絡',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.person_pin),
+                label: '個別連絡',
+              ),
             ],
             onDestinationSelected: (index) {
               switch (index) {
@@ -128,6 +140,18 @@ class HomeScreen extends ConsumerWidget {
                   break;
                 case 1:
                   _showQuickMenu(context, user, ref);
+                  break;
+                case 2:
+                  // 全体連絡画面へ遷移
+                  context.go('/notices/all');
+                  break;
+                case 3:
+                  // クラス連絡画面へ遷移
+                  context.go('/notices/class');
+                  break;
+                case 4:
+                  // 個別連絡画面へ遷移
+                  context.go('/notices/individual');
                   break;
               }
             },

@@ -21,6 +21,9 @@ import 'package:flutter/foundation.dart';
 import '../features/child/view/child_list_screen.dart';
 import '../features/auth/view/parent_list_screen.dart';
 import '../features/auth/view/teacher_list_screen.dart';
+import '../features/notice/view/notice_list_screen.dart'; // 追加
+import '../features/notice/view/notice_create_screen.dart'; // 追加
+import '../features/kindergarten/view/kindergarten_selector.dart'; // 追加
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -102,6 +105,49 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/teachers',
       builder: (context, state) => const TeacherListScreen(),
+    ),
+    GoRoute(
+      path: '/notices/all',
+      builder: (context, state) {
+        // 選択中の園IDを取得して渡す
+        final container = ProviderScope.containerOf(context);
+        final selectedKindergartenId = container.read(selectedKindergartenIdProvider);
+        return NoticeListScreen(kindergartenId: selectedKindergartenId ?? '', type: 'all');
+      },
+    ),
+    GoRoute(
+      path: '/notices/class',
+      builder: (context, state) {
+        final container = ProviderScope.containerOf(context);
+        final selectedKindergartenId = container.read(selectedKindergartenIdProvider);
+        // クラスIDは必要に応じて取得
+        return NoticeListScreen(kindergartenId: selectedKindergartenId ?? '', type: 'class');
+      },
+    ),
+    GoRoute(
+      path: '/notices/individual',
+      builder: (context, state) {
+        final container = ProviderScope.containerOf(context);
+        final selectedKindergartenId = container.read(selectedKindergartenIdProvider);
+        // childIdは必要に応じて取得
+        return NoticeListScreen(kindergartenId: selectedKindergartenId ?? '', type: 'individual');
+      },
+    ),
+    GoRoute(
+      path: '/notices/create',
+      builder: (context, state) {
+        final container = ProviderScope.containerOf(context);
+        final selectedKindergartenId = container.read(selectedKindergartenIdProvider);
+        final type = state.uri.queryParameters['type'] ?? 'all';
+        final classId = state.uri.queryParameters['classId'];
+        final childId = state.uri.queryParameters['childId'];
+        return NoticeCreateScreen(
+          kindergartenId: selectedKindergartenId ?? '',
+          type: type,
+          classId: classId,
+          childId: childId,
+        );
+      },
     ),
   ],
 );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repository/kindergarten_repository_provider.dart';
 import '../../auth/view_model/auth_view_model.dart'; // 追加
+import '../view/kindergarten_selector.dart'; // 修正: kindergartensProviderのimport
 
 class KindergartenCreateScreen extends ConsumerStatefulWidget {
   const KindergartenCreateScreen({super.key});
