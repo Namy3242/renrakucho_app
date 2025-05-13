@@ -65,6 +65,7 @@ class UserModel {
     UserRole? role,
     String? classId,
     String? kindergartenId,
+    List<String>? childIds, // 追加
     DateTime? updatedAt,
   }) {
     return UserModel(
@@ -74,7 +75,7 @@ class UserModel {
       role: role ?? this.role,
       classId: classId ?? this.classId,
       kindergartenId: kindergartenId ?? this.kindergartenId,
-      childIds: childIds,
+      childIds: childIds ?? this.childIds, // 追加
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

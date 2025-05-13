@@ -34,4 +34,14 @@ class UserRepository {
       rethrow;
     }
   }
+
+  Future<void> updateUser(UserModel user) async {
+    await _usersRef.doc(user.id).update(user.toJson());
+  }
+
+  Future<UserModel?> getUserById(String id) async {
+    final doc = await _usersRef.doc(id).get();
+    if (!doc.exists) return null;
+    return UserModel.fromJson(doc.data()!, doc.id);
+  }
 }

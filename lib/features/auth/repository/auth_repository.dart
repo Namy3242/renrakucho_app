@@ -93,9 +93,10 @@ class AuthRepository {
       email: email,
       password: password,
     );
+    final parentUid = credential.user!.uid;
 
     // 3. Firestoreにユーザー情報を保存し、childIdをchildIdsに追加
-    await _usersRef.doc(credential.user!.uid).set({
+    await _usersRef.doc(parentUid).set({
       'email': email,
       'displayName': displayName,
       'role': UserRole.parent.toString(),
@@ -104,10 +105,14 @@ class AuthRepository {
       'createdAt': DateTime.now().toIso8601String(),
     });
 
-    // 4. 招待コードを無効化（削除）
-    await inviteSnapshot.reference.delete();
+    // 4. childドキュメントのparentIdsにこのユーザーIDを追加
+    final childRef = FirebaseFirestore.instance.collection('children').doc(childId);
+    await childRef.update({
+      'parentIds': FieldValue.arrayUnion([parentUid])
+    });
 
-    // 5. 必要に応じてchildドキュメントのparentIdsにこのユーザーIDを追加する処理も実装
+    // 5. 招待コードを無効化（削除）
+    await inviteSnapshot.reference.delete();
 
     return true;
   }

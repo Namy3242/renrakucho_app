@@ -17,12 +17,14 @@ class _ChildEditDialogState extends ConsumerState<ChildEditDialog> {
   late TextEditingController _nameController;
   late TextEditingController _ageController;
   bool _isLoading = false;
+  List<String> _selectedParentIds = [];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.child.name);
     _ageController = TextEditingController(text: widget.child.age?.toString() ?? '');
+    _selectedParentIds = List<String>.from(widget.child.parentIds);
   }
 
   @override
@@ -51,7 +53,42 @@ class _ChildEditDialogState extends ConsumerState<ChildEditDialog> {
               decoration: const InputDecoration(labelText: '年齢'),
               keyboardType: TextInputType.number,
             ),
-            // 保護者・クラスの紐付け編集UIもここに追加可能
+            Consumer(
+              builder: (context, ref, _) {
+                final parentsAsync = ref.watch(parentsProvider);
+                return parentsAsync.when(
+                  data: (parents) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('保護者を選択', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ...parents.map((parent) => CheckboxListTile(
+                            value: _selectedParentIds.contains(parent.id),
+                            title: Text(parent.displayName ?? parent.email),
+                            onChanged: (checked) {
+                              setState(() {
+                                if (checked == true) {
+                                  _selectedParentIds.add(parent.id);
+                                } else {
+                                  _selectedParentIds.remove(parent.id);
+                                }
+                              });
+                            },
+                          )),
+                      if (_selectedParentIds.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text(
+                            '※保護者を1人以上選択してください',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                    ],
+                  ),
+                  loading: () => const CircularProgressIndicator(),
+                  error: (_, __) => const Text('保護者の取得に失敗しました'),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -76,10 +113,15 @@ class _ChildEditDialogState extends ConsumerState<ChildEditDialog> {
               ? null
               : () async {
                   if (!_formKey.currentState!.validate()) return;
+                  if (_selectedParentIds.isEmpty) {
+                    setState(() {}); // エラー表示のため再描画
+                    return;
+                  }
                   setState(() => _isLoading = true);
                   final updated = widget.child.copyWith(
                     name: _nameController.text.trim(),
                     age: int.tryParse(_ageController.text),
+                    parentIds: _selectedParentIds,
                   );
                   await ref.read(childViewModelProvider.notifier).updateChild(updated);
                   if (mounted) Navigator.pop(context);

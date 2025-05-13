@@ -1,17 +1,27 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/model/user_model.dart';
+import '../../auth/repository/user_repository_provider.dart';
+import '../../auth/view_model/auth_view_model.dart';
 import '../model/child_model.dart';
 import '../repository/child_repository.dart';
 import '../repository/child_repository_provider.dart';
 import '../../class/view_model/class_view_model.dart';
 
+// 保護者一覧取得用Provider（他ファイルでも使えるようにここで定義）
+final parentsProvider = FutureProvider<List<UserModel>>((ref) async {
+  final repo = ref.read(userRepositoryProvider);
+  return await repo.getParents();
+});
+
 final childViewModelProvider = StateNotifierProvider<ChildViewModel, AsyncValue<List<ChildModel>>>(
-  (ref) => ChildViewModel(ref.watch(childRepositoryProvider)),
+  (ref) => ChildViewModel(ref.watch(childRepositoryProvider), ref),
 );
 
 class ChildViewModel extends StateNotifier<AsyncValue<List<ChildModel>>> {
   final ChildRepository _repository;
+  final Ref ref; // 追加
 
-  ChildViewModel(this._repository) : super(const AsyncValue.loading());
+  ChildViewModel(this._repository, this.ref) : super(const AsyncValue.loading());
 
   Future<String?> createChild(ChildModel child) async {
     try {
@@ -27,6 +37,22 @@ class ChildViewModel extends StateNotifier<AsyncValue<List<ChildModel>>> {
       return childId;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+      return null;
+    }
+  }
+
+  Future<String?> createInviteCode(ChildModel child) async {
+    try {
+      // 保護者未紐付園児のみ発行可
+      if (child.parentIds.isNotEmpty) {
+        throw Exception('すでに保護者が紐付いています');
+      }
+      final repo = ref.read(authViewModelProvider.notifier);
+      return await repo.createInviteCode(
+        kindergartenId: child.kindergartenId,
+        childId: child.id,
+      );
+    } catch (e) {
       return null;
     }
   }
