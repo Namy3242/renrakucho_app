@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repository/kindergarten_repository_provider.dart';
+import '../../auth/view_model/auth_view_model.dart'; // 追加
 
 class KindergartenCreateScreen extends ConsumerStatefulWidget {
   const KindergartenCreateScreen({super.key});
@@ -24,7 +25,14 @@ class _KindergartenCreateScreenState extends ConsumerState<KindergartenCreateScr
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      await ref.read(kindergartenRepositoryProvider).createKindergarten(_nameController.text.trim());
+      final currentUser = ref.read(currentUserProvider).value;
+      final adminUserId = currentUser?.id ?? '';
+      await ref.read(kindergartenRepositoryProvider).createKindergarten(
+        _nameController.text.trim(),
+        adminUserId: adminUserId,
+      );
+      // 追加: 園リストを再取得
+      ref.invalidate(kindergartensProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('園を登録しました')),

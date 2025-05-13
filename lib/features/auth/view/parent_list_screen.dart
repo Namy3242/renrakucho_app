@@ -8,6 +8,7 @@ import '../../child/model/child_model.dart';
 import '../../child/view_model/child_provider.dart';
 import '../../child/view/child_list_screen.dart'; // 追加: allChildrenProviderのimport
 import '../../auth/view_model/auth_view_model.dart'; // 追加
+import '../../kindergarten/view/kindergarten_selector.dart'; // 追加
 
 class ParentListScreen extends ConsumerWidget {
   const ParentListScreen({super.key});
@@ -188,5 +189,8 @@ class ParentListScreen extends ConsumerWidget {
 
 final parentsProvider = FutureProvider<List<UserModel>>((ref) async {
   final repo = ref.read(userRepositoryProvider);
-  return await repo.getParents();
+  final selectedKindergartenId = ref.watch(selectedKindergartenIdProvider);
+  final all = await repo.getParents();
+  if (selectedKindergartenId == null) return all;
+  return all.where((p) => p.kindergartenId == selectedKindergartenId).toList();
 });

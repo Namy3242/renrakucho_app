@@ -5,22 +5,31 @@ import '../repository/class_repository_provider.dart';
 import '../../child/view_model/child_view_model.dart';
 import '../../child/view_model/child_provider.dart';
 import '../../child/model/child_model.dart'; // 追加
+import '../../kindergarten/view/kindergarten_selector.dart'; // 追加
 
 final classViewModelProvider = StateNotifierProvider<ClassViewModel, AsyncValue<List<ClassModel>>>(
-  (ref) => ClassViewModel(ref.watch(classRepositoryProvider)),
+  (ref) {
+    final selectedKindergartenId = ref.watch(selectedKindergartenIdProvider);
+    return ClassViewModel(ref.watch(classRepositoryProvider), selectedKindergartenId);
+  },
 );
 
 class ClassViewModel extends StateNotifier<AsyncValue<List<ClassModel>>> {
   final ClassRepository _repository;
+  final String? selectedKindergartenId; // 追加
 
-  ClassViewModel(this._repository) : super(const AsyncValue.loading()) {
+  ClassViewModel(this._repository, this.selectedKindergartenId) : super(const AsyncValue.loading()) {
     _fetchClasses();
   }
 
   void _fetchClasses() {
     _repository.getClasses().listen(
       (classes) {
-        state = AsyncValue.data(classes);
+        // 園IDでフィルタ
+        final filtered = selectedKindergartenId == null
+            ? classes
+            : classes.where((c) => c.kindergartenId == selectedKindergartenId).toList();
+        state = AsyncValue.data(filtered);
       },
       onError: (error, stack) {
         state = AsyncValue.error(error, stack);

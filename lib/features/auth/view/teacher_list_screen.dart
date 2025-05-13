@@ -4,6 +4,7 @@ import '../../auth/model/user_model.dart';
 import '../../auth/repository/user_repository_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/view_model/auth_view_model.dart'; // 追加
+import '../../kindergarten/view/kindergarten_selector.dart'; // 追加
 
 class TeacherListScreen extends ConsumerWidget {
   const TeacherListScreen({super.key});
@@ -110,5 +111,8 @@ class TeacherListScreen extends ConsumerWidget {
 
 final teachersProvider = FutureProvider<List<UserModel>>((ref) async {
   final repo = ref.read(userRepositoryProvider);
-  return await repo.getTeachers();
+  final selectedKindergartenId = ref.watch(selectedKindergartenIdProvider);
+  final all = await repo.getTeachers();
+  if (selectedKindergartenId == null) return all;
+  return all.where((t) => t.kindergartenId == selectedKindergartenId).toList();
 });

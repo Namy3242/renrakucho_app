@@ -43,7 +43,11 @@ class KindergartenSelectScreen extends ConsumerWidget {
                   builder: (context) => _KindergartenCreateDialog(),
                 );
                 if (name != null && name.isNotEmpty) {
-                  await ref.read(kindergartenRepositoryProvider).createKindergarten(name);
+                  // 管理者IDを渡す
+                  await ref.read(kindergartenRepositoryProvider).createKindergarten(
+                    name,
+                    adminUserId: currentUser!.id,
+                  );
                   ref.invalidate(kindergartensProvider);
                 }
               },

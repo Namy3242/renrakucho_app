@@ -10,6 +10,7 @@ import '../view/child_create_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/view_model/auth_view_model.dart'; // 追加
+import '../../kindergarten/view/kindergarten_selector.dart'; // 追加
 
 class ChildListScreen extends ConsumerWidget {
   const ChildListScreen({super.key});
@@ -191,6 +192,9 @@ class ChildListScreen extends ConsumerWidget {
 
 // 全園児取得Provider
 final allChildrenProvider = FutureProvider<List<ChildModel>>((ref) async {
+  final selectedKindergartenId = ref.watch(selectedKindergartenIdProvider);
   final snapshot = await FirebaseFirestore.instance.collection('children').get();
-  return snapshot.docs.map((doc) => ChildModel.fromJson(doc.data(), doc.id)).toList();
+  final all = snapshot.docs.map((doc) => ChildModel.fromJson(doc.data(), doc.id)).toList();
+  if (selectedKindergartenId == null) return all;
+  return all.where((c) => c.kindergartenId == selectedKindergartenId).toList();
 });

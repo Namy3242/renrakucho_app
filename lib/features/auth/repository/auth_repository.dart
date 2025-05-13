@@ -31,12 +31,13 @@ class AuthRepository {
       email: email,
       password: password,
     );
-    // 管理者は園IDを自分で作成後に設定する想定なので、ここでは空文字列や仮IDでも可
+    // 管理者は複数園を持つため kindergartenIds を空配列で初期化
     await _usersRef.doc(credential.user!.uid).set({
       'email': email,
       'displayName': displayName,
       'role': UserRole.admin.toString(),
-      'kindergartenId': '', // 管理者は園作成後に設定
+      'kindergartenId': '', // 旧フィールド（互換用）
+      'kindergartenIds': <String>[], // 新フィールド
       'createdAt': DateTime.now().toIso8601String(),
     });
   }

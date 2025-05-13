@@ -7,6 +7,9 @@ import '../../kindergarten/view/kindergarten_create_screen.dart';
 import '../../kindergarten/view/kindergarten_selector.dart';
 import '../../../core/widgets/loading_overlay.dart';
 import 'package:go_router/go_router.dart';
+import '../../child/view_model/child_view_model.dart';
+import '../../child/view/child_list_screen.dart'; // allChildrenProvider
+import '../../class/view_model/class_view_model.dart'; // 追加: クラス一覧取得用
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -29,6 +32,20 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
+    final allChildrenAsync = ref.watch(allChildrenProvider);
+    final classListAsync = ref.watch(classViewModelProvider); // 追加
+
+    // 未紐付園児数
+    int unlinkedChildCount = 0;
+    allChildrenAsync.whenData((children) {
+      unlinkedChildCount = children.where((c) => c.parentIds.isEmpty).length;
+    });
+
+    // 担任未設定クラス数
+    int unassignedClassCount = 0;
+    classListAsync.whenData((classes) {
+      unassignedClassCount = classes.where((c) => c.teacherIds.isEmpty).length;
+    });
 
     return currentUser.when(
       data: (user) {
@@ -72,13 +89,35 @@ class HomeScreen extends ConsumerWidget {
           ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: 0,
-            destinations: const [
-              NavigationDestination(
+            destinations: [
+              const NavigationDestination(
                 icon: Icon(Icons.home),
                 label: 'ホーム',
               ),
               NavigationDestination(
-                icon: Icon(Icons.settings),
+                icon: Stack(
+                  children: [
+                    const Icon(Icons.settings),
+                    if (unlinkedChildCount > 0 || unassignedClassCount > 0)
+                      Positioned(
+                        right: 0, top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.red, shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                          child: Text(
+                            '${unlinkedChildCount + unassignedClassCount}',
+                            style: const TextStyle(
+                              color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 label: '設定',
               ),
             ],
@@ -88,8 +127,7 @@ class HomeScreen extends ConsumerWidget {
                   if (context.mounted) context.go('/home');
                   break;
                 case 1:
-                  // 設定ボタン押下時
-                  _showQuickMenu(context, user);
+                  _showQuickMenu(context, user, ref);
                   break;
               }
             },
@@ -105,12 +143,18 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showQuickMenu(BuildContext context, user) {
+  void _showQuickMenu(BuildContext context, user, WidgetRef ref) async {
     if (user.role == null) return;
     if (user.role.toString() != 'UserRole.admin' && user.role.toString() != 'UserRole.teacher') {
-      // 一般ユーザーは何も表示しない
       return;
     }
+    // 最新の未紐付園児数・担任未設定クラス数を取得
+    final children = await ref.read(allChildrenProvider.future);
+    final unlinked = children.where((c) => c.parentIds.isEmpty).length;
+    final classAsync = await ref.read(classViewModelProvider);
+    final classes = classAsync.value ?? [];
+    final unassigned = classes.where((c) => c.teacherIds.isEmpty).length;
+
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -118,7 +162,29 @@ class HomeScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.class_),
+              leading: Stack(
+                children: [
+                  const Icon(Icons.class_),
+                  if (unassigned > 0)
+                    Positioned(
+                      right: 0, top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.red, shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                        child: Text(
+                          '$unassigned',
+                          style: const TextStyle(
+                            color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               title: const Text('クラス'),
               onTap: () {
                 Navigator.pop(context);
@@ -126,7 +192,29 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.child_care),
+              leading: Stack(
+                children: [
+                  const Icon(Icons.child_care),
+                  if (unlinked > 0)
+                    Positioned(
+                      right: 0, top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.red, shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                        child: Text(
+                          '$unlinked',
+                          style: const TextStyle(
+                            color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               title: const Text('園児'),
               onTap: () {
                 Navigator.pop(context);
