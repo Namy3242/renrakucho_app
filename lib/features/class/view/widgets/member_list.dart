@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/view_model/user_provider.dart';
 import '../../../child/view/child_edit_dialog.dart';
 import '../../view_model/class_view_model.dart';
+import '../class_detail_screen.dart';
 import 'add_member_dialog.dart';
 import '../../../child/view_model/child_provider.dart'; // 園児Providerをインポート
 import '../../../child/model/child_model.dart';
@@ -31,6 +32,9 @@ class MemberList extends ConsumerWidget {
       try {
         await ref.read(classViewModelProvider.notifier)
             .addMember(classId, result);
+        // クラス一覧・クラス詳細を再取得して即時反映
+        ref.invalidate(classViewModelProvider);
+        ref.invalidate(selectedClassProvider(classId));
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('メンバーを追加しました')),

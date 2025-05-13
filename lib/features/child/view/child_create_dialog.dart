@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/view_model/auth_view_model.dart';
+import '../../class/view/class_detail_screen.dart';
 import '../model/child_model.dart';
 import '../view_model/child_view_model.dart';
 import '../../auth/model/user_model.dart';
@@ -84,13 +85,20 @@ class _ChildCreateDialogState extends ConsumerState<ChildCreateDialog> {
         id: '',
         name: _nameController.text.trim(),
         age: int.tryParse(_ageController.text),
-        classId: _selectedClassId, // ここを修正
+        classId: _selectedClassId,
         kindergartenId: kindergartenId,
         parentIds: _selectedParentIds,
       );
       final childId = await ref.read(childViewModelProvider.notifier).createChild(child);
       if (widget.onCreated != null && childId != null) {
         widget.onCreated!(childId);
+      }
+      // ここでクラス一覧・クラス詳細をinvalidateして即時反映
+      if (_selectedClassId != null && _selectedClassId!.isNotEmpty) {
+        ref.invalidate(classViewModelProvider);
+        // クラス詳細画面を開いている場合も即時反映
+        // selectedClassProviderはfamilyなので、classIdを指定してinvalidate
+        ref.invalidate(selectedClassProvider(_selectedClassId!));
       }
       Navigator.pop(context, childId);
     } finally {

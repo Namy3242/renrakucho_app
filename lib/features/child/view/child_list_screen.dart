@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/model/user_model.dart';
 import '../../auth/repository/user_repository_provider.dart';
+import '../../class/view_model/class_view_model.dart';
 import '../model/child_model.dart';
 import '../view_model/child_provider.dart';
 import '../view_model/child_view_model.dart';
@@ -50,6 +51,7 @@ class ChildListScreen extends ConsumerWidget {
             builder: (context) => ChildCreateDialog(),
           );
           ref.invalidate(allChildrenProvider);
+          ref.invalidate(classViewModelProvider); // 追加: クラス一覧も再取得
         },
         child: const Icon(Icons.add),
       ),
