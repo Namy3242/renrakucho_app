@@ -7,8 +7,8 @@ import 'notice_create_screen.dart';
 import '../../auth/view_model/auth_view_model.dart';
 import '../../auth/model/user_role.dart';
 import '../model/notice_model.dart';
-import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../child/view/child_list_screen.dart';
 
 final noticeListProvider = StreamProvider.family<
   List<NoticeModel>,
@@ -20,6 +20,26 @@ final noticeListProvider = StreamProvider.family<
 
   if (kindergartenId.isEmpty || type.isEmpty) {
     return const Stream.empty();
+  }
+
+  // 保護者は自身の子どものクラス連絡のみ取得
+  if (type == 'class') {
+    final currentUser = ref.watch(currentUserProvider).value;
+    if (currentUser != null && currentUser.role == UserRole.parent) {
+      final children = ref.watch(allChildrenProvider).maybeWhen(data: (list) => list, orElse: () => []);
+      final myChild = children.firstWhere(
+        (c) => c.parentIds.contains(currentUser.id),
+        orElse: () => null,
+      );
+      final filterClassId = myChild?.classId;
+      if (filterClassId == null) return const Stream.empty();
+      return repo.getNotices(
+        kindergartenId: kindergartenId,
+        classId: filterClassId,
+        childId: null,
+        type: type,
+      );
+    }
   }
 
   return repo.getNotices(
@@ -69,7 +89,19 @@ class NoticeListScreen extends ConsumerWidget {
 
     return noticesAsync.when(
       data: (notices) {
+        // リスト取得完了
         debugPrint('[NoticeListScreen] notices count: ${notices.length}');
+        // 保護者フィルター: 子どものクラスのみ表示
+        var displayNotices = notices;
+        if (type == 'class' && currentUser?.role == UserRole.parent) {
+          final children = ref.watch(allChildrenProvider).valueOrNull ?? [];
+          final myClassIds = children
+              .where((c) => c.parentIds.contains(currentUser!.id))
+              .map((c) => c.classId)
+              .whereType<String>()
+              .toSet();
+          displayNotices = displayNotices.where((n) => n.classId != null && myClassIds.contains(n.classId)).toList();
+        }
         return Scaffold(
           appBar: AppBar(
             title: const Text('連絡一覧'),
@@ -80,12 +112,12 @@ class NoticeListScreen extends ConsumerWidget {
               },
             ),
           ),
-          body: notices.isEmpty
+          body: displayNotices.isEmpty
               ? const Center(child: Text('連絡がありません'))
               : ListView.builder(
-                  itemCount: notices.length,
+                  itemCount: displayNotices.length,
                   itemBuilder: (context, index) {
-                    final notice = notices[index];
+                    final notice = displayNotices[index];
                     debugPrint('[NoticeListScreen] notice: $notice');
                     return ListTile(
                       // 添付プレビュー
