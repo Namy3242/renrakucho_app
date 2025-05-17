@@ -9,6 +9,8 @@ import '../../auth/model/user_role.dart';
 import '../model/notice_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../child/view/child_list_screen.dart';
+import '../../kindergarten/view/kindergarten_selector.dart';  // for selectedKindergartenIdProvider
+import '../../kindergarten/view/kindergarten_select_screen.dart';
 
 final noticeListProvider = StreamProvider.family<
   List<NoticeModel>,
@@ -71,11 +73,11 @@ class NoticeListScreen extends ConsumerWidget {
     final canPost = currentUser != null &&
         (currentUser.role == UserRole.admin || currentUser.role == UserRole.teacher);
 
-    // ボトムメニュー用選択インデックス
+    // ボトムメニュー用選択インデックス (Home と同じ並び)
     final selectedIndex = switch (type) {
-      'all' => 2,
-      'class' => 3,
-      'individual' => 4,
+      'all' => 1,
+      'class' => 2,
+      'individual' => 3,
       _ => 0,
     };
 
@@ -188,10 +190,10 @@ class NoticeListScreen extends ConsumerWidget {
             selectedIndex: selectedIndex,
             destinations: const [
               NavigationDestination(icon: Icon(Icons.home), label: 'ホーム'),
-              NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
               NavigationDestination(icon: Icon(Icons.campaign), label: '全体連絡'),
               NavigationDestination(icon: Icon(Icons.groups), label: 'クラス連絡'),
               NavigationDestination(icon: Icon(Icons.person_pin), label: '個別連絡'),
+              NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
             ],
             onDestinationSelected: (index) {
               switch (index) {
@@ -199,16 +201,77 @@ class NoticeListScreen extends ConsumerWidget {
                   context.go('/home');
                   break;
                 case 1:
-                  // 設定メニュー or クイックメニュー呼び出し
-                  break;
-                case 2:
                   context.go('/notices/all/$kindergartenId');
                   break;
-                case 3:
+                case 2:
                   context.go('/notices/class/$kindergartenId');
                   break;
-                case 4:
+                case 3:
                   context.go('/notices/individual/$kindergartenId');
+                  break;
+                case 4:
+                  if (currentUser != null && (currentUser.role == UserRole.admin || currentUser.role == UserRole.teacher)) {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) => SafeArea(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.class_),
+                              title: const Text('クラス管理'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/classes');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.child_care),
+                              title: const Text('園児管理'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/children');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.people),
+                              title: const Text('保護者管理'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/parents');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.school),
+                              title: const Text('保育者管理'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/teachers');
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.business),
+                              title: const Text('園管理'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => KindergartenSelectScreen(
+                                      onSelected: (kg) {
+                                        ref.read(selectedKindergartenIdProvider.notifier).state = kg.id;
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
                   break;
               }
             },
