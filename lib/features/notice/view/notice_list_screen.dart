@@ -49,6 +49,14 @@ class NoticeListScreen extends ConsumerWidget {
     final canPost = currentUser != null &&
         (currentUser.role == UserRole.admin || currentUser.role == UserRole.teacher);
 
+    // ボトムメニュー用選択インデックス
+    final selectedIndex = switch (type) {
+      'all' => 2,
+      'class' => 3,
+      'individual' => 4,
+      _ => 0,
+    };
+
     final noticesAsync = ref.watch(noticeListProvider((
       kindergartenId,
       type,
@@ -115,6 +123,35 @@ class NoticeListScreen extends ConsumerWidget {
                   tooltip: '連絡を作成',
                 )
               : null,
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: selectedIndex,
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.home), label: 'ホーム'),
+              NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
+              NavigationDestination(icon: Icon(Icons.campaign), label: '全体連絡'),
+              NavigationDestination(icon: Icon(Icons.groups), label: 'クラス連絡'),
+              NavigationDestination(icon: Icon(Icons.person_pin), label: '個別連絡'),
+            ],
+            onDestinationSelected: (index) {
+              switch (index) {
+                case 0:
+                  context.go('/home');
+                  break;
+                case 1:
+                  // 設定メニュー or クイックメニュー呼び出し
+                  break;
+                case 2:
+                  context.go('/notices/all/$kindergartenId');
+                  break;
+                case 3:
+                  context.go('/notices/class/$kindergartenId');
+                  break;
+                case 4:
+                  context.go('/notices/individual/$kindergartenId');
+                  break;
+              }
+            },
+          ),
         );
       },
       loading: () {
