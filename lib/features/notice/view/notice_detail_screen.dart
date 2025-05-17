@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../model/notice_model.dart';
 import '../repository/notice_repository_provider.dart';
 import '../../auth/view_model/user_provider.dart';
@@ -47,25 +48,42 @@ class NoticeDetailScreen extends ConsumerWidget {
                 Text(notice.content, style: Theme.of(context).textTheme.bodyLarge),
                 if (notice.imageUrl != null && notice.imageUrl!.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  // スタイル付き画像プレビュー
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      notice.imageUrl!,
-                      fit: BoxFit.cover,
-                      height: 200,
-                      width: double.infinity,
+                  // スタイル付き画像プレビュー（タップで拡大）
+                  GestureDetector(
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (_) => Dialog(
+                        child: InteractiveViewer(
+                          child: CachedNetworkImage(
+                            imageUrl: notice.imageUrl!,
+                            placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
+                            errorWidget: (_, __, ___) => const Icon(Icons.error),
+                          ),
+                        ),
+                      ),
+                    ),
+                    child: Hero(
+                      tag: notice.id,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: CachedNetworkImage(
+                          imageUrl: notice.imageUrl!,
+                          fit: BoxFit.cover,
+                          height: 200,
+                          width: double.infinity,
+                        ),
+                      ),
                     ),
                   ),
                 ],
                 if (notice.pdfUrl != null && notice.pdfUrl!.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  // PDFリンクを外部で開く
+                  // PDFリンクを外部ビューアで開く
                   ElevatedButton.icon(
                     onPressed: () async {
                       final uri = Uri.parse(notice.pdfUrl!);
                       if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri);
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('PDFを開けませんでした')),

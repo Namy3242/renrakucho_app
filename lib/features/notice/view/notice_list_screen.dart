@@ -8,6 +8,7 @@ import '../../auth/view_model/auth_view_model.dart';
 import '../../auth/model/user_role.dart';
 import '../model/notice_model.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 final noticeListProvider = StreamProvider.family<
   List<NoticeModel>,
@@ -87,13 +88,40 @@ class NoticeListScreen extends ConsumerWidget {
                     final notice = notices[index];
                     debugPrint('[NoticeListScreen] notice: $notice');
                     return ListTile(
-                      title: Text(notice.title),
-                      subtitle: Text(notice.content),
-                      trailing: notice.imageUrl != null
-                          ? const Icon(Icons.image)
+                      // 添付プレビュー
+                      leading: notice.imageUrl != null
+                          ? GestureDetector(
+                              onTap: () => showDialog(
+                                context: context,
+                                builder: (_) => Dialog(
+                                  child: InteractiveViewer(
+                                    child: CachedNetworkImage(
+                                      imageUrl: notice.imageUrl!,
+                                      placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
+                                      errorWidget: (_, __, ___) => const Icon(Icons.error),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              child: Hero(
+                                tag: notice.id,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: CachedNetworkImage(
+                                    imageUrl: notice.imageUrl!,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            )
                           : notice.pdfUrl != null
                               ? const Icon(Icons.picture_as_pdf)
                               : null,
+                      title: Text(notice.title),
+                      subtitle: Text(notice.content),
+                      trailing: null,
                       onTap: () {
                         Navigator.push(
                           context,
