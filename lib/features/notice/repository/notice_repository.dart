@@ -30,4 +30,9 @@ class NoticeRepository {
     if (!doc.exists) return null;
     return NoticeModel.fromFirestore(doc);
   }
+
+  // ドキュメントを削除
+  Future<void> deleteNotice(String id) async {
+    await _collection.doc(id).delete();
+  }
 }

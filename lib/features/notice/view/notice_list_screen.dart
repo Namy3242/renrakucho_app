@@ -5,6 +5,7 @@ import '../repository/notice_repository_provider.dart';
 import 'notice_detail_screen.dart';
 import 'notice_create_screen.dart';
 import '../../auth/view_model/auth_view_model.dart';
+import '../../auth/model/user_role.dart';
 import '../model/notice_model.dart';
 
 final noticeListProvider = StreamProvider.family<
@@ -43,6 +44,11 @@ class NoticeListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 投稿権限チェック
+    final currentUser = ref.watch(currentUserProvider).value;
+    final canPost = currentUser != null &&
+        (currentUser.role == UserRole.admin || currentUser.role == UserRole.teacher);
+
     final noticesAsync = ref.watch(noticeListProvider((
       kindergartenId,
       type,
@@ -83,30 +89,32 @@ class NoticeListScreen extends ConsumerWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const NoticeDetailScreen(noticeId: '',),
+                            builder: (_) => NoticeDetailScreen(noticeId: notice.id),
                           ),
                         );
                       },
                     );
                   },
                 ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NoticeCreateScreen(
-                    kindergartenId: kindergartenId,
-                    type: type,
-                    classId: classId,
-                    childId: childId,
-                  ),
-                ),
-              );
-            },
-            child: const Icon(Icons.add),
-            tooltip: '連絡を作成',
-          ),
+          floatingActionButton: canPost
+              ? FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NoticeCreateScreen(
+                          kindergartenId: kindergartenId,
+                          type: type,
+                          classId: classId,
+                          childId: childId,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add),
+                  tooltip: '連絡を作成',
+                )
+              : null,
         );
       },
       loading: () {
@@ -122,23 +130,25 @@ class NoticeListScreen extends ConsumerWidget {
             ),
           ),
           body: const Center(child: CircularProgressIndicator()),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NoticeCreateScreen(
-                    kindergartenId: kindergartenId,
-                    type: type,
-                    classId: classId,
-                    childId: childId,
-                  ),
-                ),
-              );
-            },
-            child: const Icon(Icons.add),
-            tooltip: '連絡を作成',
-          ),
+          floatingActionButton: canPost
+              ? FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NoticeCreateScreen(
+                          kindergartenId: kindergartenId,
+                          type: type,
+                          classId: classId,
+                          childId: childId,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add),
+                  tooltip: '連絡を作成',
+                )
+              : null,
         );
       },
       error: (e, stack) {
@@ -160,23 +170,25 @@ class NoticeListScreen extends ConsumerWidget {
               style: const TextStyle(color: Colors.red),
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NoticeCreateScreen(
-                    kindergartenId: kindergartenId,
-                    type: type,
-                    classId: classId,
-                    childId: childId,
-                  ),
-                ),
-              );
-            },
-            child: const Icon(Icons.add),
-            tooltip: '連絡を作成',
-          ),
+          floatingActionButton: canPost
+              ? FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NoticeCreateScreen(
+                          kindergartenId: kindergartenId,
+                          type: type,
+                          classId: classId,
+                          childId: childId,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add),
+                  tooltip: '連絡を作成',
+                )
+              : null,
         );
       },
     );

@@ -37,8 +37,17 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider).value;
+    // ユーザー取得エラーまたは未ログインの場合
+    if (currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('連絡作成')),
+        body: const Center(child: Text('ユーザー情報が取得できません')),
+      );
+    }
     final isClassType = widget.type == 'class';
     final isIndividualType = widget.type == 'individual';
+    // 投稿権限：管理者・保育者のみ
+    final canPost = currentUser.role == UserRole.admin || currentUser.role == UserRole.teacher;
     final classListAsync = ref.watch(classViewModelProvider);
     final childListAsync = ref.watch(allChildrenProvider);
 
@@ -91,7 +100,9 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
               ],
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: _isLoading ? null : () async {
+                onPressed: (!canPost || _isLoading)
+                    ? null
+                    : () async {
                   if (!_formKey.currentState!.validate()) return;
                   setState(() => _isLoading = true);
                   try {
@@ -100,7 +111,7 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
                       kindergartenId: widget.kindergartenId,
                       classId: isClassType ? _selectedClassId : null,
                       childId: isIndividualType ? _selectedChildId : null,
-                      authorId: currentUser?.id ?? '',
+                      authorId: currentUser.id,
                       type: widget.type,
                       title: _titleController.text.trim(),
                       content: _contentController.text.trim(),
@@ -109,13 +120,28 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
                       pdfUrl: null,
                     );
                     await ref.read(noticeRepositoryProvider).addNotice(notice);
-                    if (mounted) Navigator.pop(context);
+                    // 投稿成功フィードバック
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('投稿が完了しました')),
+                      );
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('投稿に失敗しました: $e')),
+                    );
                   } finally {
                     setState(() => _isLoading = false);
                   }
                 },
                 child: _isLoading ? const CircularProgressIndicator() : const Text('投稿する'),
               ),
+              if (!canPost)
+                const Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: Text('投稿権限がありません', style: TextStyle(color: Colors.red)),
+                ),
             ],
           ),
         ),
