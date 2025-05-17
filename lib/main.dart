@@ -10,35 +10,16 @@ import 'core/firebase/firebase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
-    final firebaseService = FirebaseService();
-    await firebaseService.enablePersistence();
-    
-    // オフライン永続化の設定
-    FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: true,
-      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-    );
-
-    final isFirestoreAvailable = await firebaseService.checkFirestoreConnection();
-    
-    if (!isFirestoreAvailable) {
-      print('Warning: Firestore is not available');
-      // エラーハンドリングを実装
-    }
-  } catch (e) {
-    print('Firebase initialization error: $e');
-  }
-
-  // Webプラットフォームの場合、Connectivity Plusの初期化
-  if (kIsWeb) {
-    Connectivity();
-  }
+  // Firestoreのキャッシュ設定（新しい推奨方法）
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+  // ※ enableMultiTabIndexedDbPersistence() は今後非推奨なので使わない
 
   runApp(
     const ProviderScope(

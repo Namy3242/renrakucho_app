@@ -1,26 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../repository/notice_repository.dart';
+import 'package:go_router/go_router.dart';
+import '../repository/notice_repository_provider.dart';
+import 'notice_detail_screen.dart';
+import 'notice_create_screen.dart';
+import '../../auth/view_model/auth_view_model.dart';
 import '../model/notice_model.dart';
-import 'notice_create_screen.dart'; // 追加
-import 'notice_detail_screen.dart'; // 追加
-import '../../auth/view_model/auth_view_model.dart'; // 追加
 
-final noticeRepositoryProvider = Provider((ref) => NoticeRepository());
-
-final noticeListProvider = StreamProvider.family<List<NoticeModel>, Map<String, String?>>((ref, params) {
+final noticeListProvider = StreamProvider.family<
+  List<NoticeModel>,
+  (String kindergartenId, String type, String? classId, String? childId)
+>((ref, params) {
   final repo = ref.read(noticeRepositoryProvider);
+
+  final (kindergartenId, type, classId, childId) = params;
+
+  if (kindergartenId.isEmpty || type.isEmpty) {
+    return const Stream.empty();
+  }
+
   return repo.getNotices(
-    kindergartenId: params['kindergartenId']!,
-    classId: params['classId'],
-    childId: params['childId'],
-    type: params['type']!,
+    kindergartenId: kindergartenId,
+    classId: classId,
+    childId: childId,
+    type: type,
   );
 });
 
 class NoticeListScreen extends ConsumerWidget {
   final String kindergartenId;
-  final String type; // 'all', 'class', 'individual'
+  final String type;
   final String? classId;
   final String? childId;
 
@@ -34,64 +43,142 @@ class NoticeListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final noticesAsync = ref.watch(noticeListProvider({
-      'kindergartenId': kindergartenId,
-      'type': type,
-      'classId': classId,
-      'childId': childId,
-    }));
-    final user = ref.watch(currentUserProvider).value;
-    final isAllowed = user != null &&
-        (user.role.toString() == 'UserRole.admin' || user.role.toString() == 'UserRole.teacher');
+    final noticesAsync = ref.watch(noticeListProvider((
+      kindergartenId,
+      type,
+      classId,
+      childId,
+    )));
+    debugPrint('[NoticeListScreen] params: kindergartenId=$kindergartenId, type=$type, classId=$classId, childId=$childId');
 
-    return Scaffold(
-      appBar: AppBar(title: Text('連絡一覧')),
-      body: noticesAsync.when(
-        data: (notices) => ListView.builder(
-          itemCount: notices.length,
-          itemBuilder: (context, index) {
-            final notice = notices[index];
-            return ListTile(
-              title: Text(notice.title),
-              subtitle: Text(notice.content),
-              trailing: notice.imageUrl != null
-                  ? const Icon(Icons.image)
-                  : notice.pdfUrl != null
-                      ? const Icon(Icons.picture_as_pdf)
-                      : null,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => NoticeDetailScreen(notice: notice),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('エラー: $e')),
-      ),
-      floatingActionButton: isAllowed
-          ? FloatingActionButton(
+    return noticesAsync.when(
+      data: (notices) {
+        debugPrint('[NoticeListScreen] notices count: ${notices.length}');
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('連絡一覧'),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => NoticeCreateScreen(
-                      kindergartenId: kindergartenId,
-                      type: type,
-                      classId: classId,
-                      childId: childId,
-                    ),
-                  ),
-                );
+                context.go('/home');
               },
-              child: const Icon(Icons.add),
-              tooltip: '連絡を作成',
-            )
-          : null,
+            ),
+          ),
+          body: notices.isEmpty
+              ? const Center(child: Text('連絡がありません'))
+              : ListView.builder(
+                  itemCount: notices.length,
+                  itemBuilder: (context, index) {
+                    final notice = notices[index];
+                    debugPrint('[NoticeListScreen] notice: $notice');
+                    return ListTile(
+                      title: Text(notice.title),
+                      subtitle: Text(notice.content),
+                      trailing: notice.imageUrl != null
+                          ? const Icon(Icons.image)
+                          : notice.pdfUrl != null
+                              ? const Icon(Icons.picture_as_pdf)
+                              : null,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const NoticeDetailScreen(noticeId: '',),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NoticeCreateScreen(
+                    kindergartenId: kindergartenId,
+                    type: type,
+                    classId: classId,
+                    childId: childId,
+                  ),
+                ),
+              );
+            },
+            child: const Icon(Icons.add),
+            tooltip: '連絡を作成',
+          ),
+        );
+      },
+      loading: () {
+        debugPrint('[NoticeListScreen] loading...');
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('連絡一覧'),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                context.go('/home');
+              },
+            ),
+          ),
+          body: const Center(child: CircularProgressIndicator()),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NoticeCreateScreen(
+                    kindergartenId: kindergartenId,
+                    type: type,
+                    classId: classId,
+                    childId: childId,
+                  ),
+                ),
+              );
+            },
+            child: const Icon(Icons.add),
+            tooltip: '連絡を作成',
+          ),
+        );
+      },
+      error: (e, stack) {
+        debugPrint('[NoticeListScreen] error: ${e.toString()}');
+        debugPrint('[NoticeListScreen] stack: ${stack.toString()}');
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('連絡一覧'),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                context.go('/home');
+              },
+            ),
+          ),
+          body: Center(
+            child: Text(
+              'エラー: $e\nFirestoreの設定やデータ構造を再確認してください。',
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NoticeCreateScreen(
+                    kindergartenId: kindergartenId,
+                    type: type,
+                    classId: classId,
+                    childId: childId,
+                  ),
+                ),
+              );
+            },
+            child: const Icon(Icons.add),
+            tooltip: '連絡を作成',
+          ),
+        );
+      },
     );
   }
 }

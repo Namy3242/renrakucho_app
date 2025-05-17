@@ -1,29 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import '../features/auth/view/login_screen.dart';
-import '../features/auth/view/register_screen.dart';  // 追加
+import '../features/auth/view/register_screen.dart';
 import '../features/home/view/home_screen.dart';
 import '../features/class/view/class_list_screen.dart';
 import '../features/class/view/class_create_screen.dart';
 import '../features/class/view/class_detail_screen.dart';
-import '../features/class/view/class_edit_screen.dart';
-import '../features/common/view/not_found_screen.dart';
-import '../core/widgets/loading_overlay.dart';
-import '../features/common/view/error_screen.dart';
-import '../providers/auth_provider.dart';
-import '../features/class/repository/class_repository_provider.dart';
 import '../features/post/view/post_create_screen.dart';
 import '../features/post/view/post_detail_screen.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'dart:async';
-import 'package:flutter/foundation.dart';
 import '../features/child/view/child_list_screen.dart';
 import '../features/auth/view/parent_list_screen.dart';
 import '../features/auth/view/teacher_list_screen.dart';
-import '../features/notice/view/notice_list_screen.dart'; // 追加
-import '../features/notice/view/notice_create_screen.dart'; // 追加
-import '../features/kindergarten/view/kindergarten_selector.dart'; // 追加
+import '../features/notice/view/notice_list_screen.dart';
+import '../features/common/view/not_found_screen.dart';
+import '../providers/auth_provider.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -31,8 +25,8 @@ final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
   errorBuilder: (context, state) => const NotFoundScreen(),
-  refreshListenable: GoRouterRefreshStream(Connectivity().onConnectivityChanged), // 追加
-  redirect: (context, state) async { // asyncに変更
+  refreshListenable: GoRouterRefreshStream(Connectivity().onConnectivityChanged),
+  redirect: (context, state) async {
     try {
       final container = ProviderScope.containerOf(context);
       final user = container.read(authStateProvider).asData?.value;
@@ -107,47 +101,27 @@ final appRouter = GoRouter(
       builder: (context, state) => const TeacherListScreen(),
     ),
     GoRoute(
-      path: '/notices/all',
-      builder: (context, state) {
-        // 選択中の園IDを取得して渡す
-        final container = ProviderScope.containerOf(context);
-        final selectedKindergartenId = container.read(selectedKindergartenIdProvider);
-        return NoticeListScreen(kindergartenId: selectedKindergartenId ?? '', type: 'all');
-      },
+      path: '/notices/:type/:kindergartenId',
+      builder: (context, state) => NoticeListScreen(
+        type: state.pathParameters['type']!,
+        kindergartenId: state.pathParameters['kindergartenId']!,
+      ),
     ),
     GoRoute(
-      path: '/notices/class',
-      builder: (context, state) {
-        final container = ProviderScope.containerOf(context);
-        final selectedKindergartenId = container.read(selectedKindergartenIdProvider);
-        // クラスIDは必要に応じて取得
-        return NoticeListScreen(kindergartenId: selectedKindergartenId ?? '', type: 'class');
-      },
+      path: '/notices/class/:kindergartenId/:classId',
+      builder: (context, state) => NoticeListScreen(
+        type: 'class',
+        kindergartenId: state.pathParameters['kindergartenId']!,
+        classId: state.pathParameters['classId']!,
+      ),
     ),
     GoRoute(
-      path: '/notices/individual',
-      builder: (context, state) {
-        final container = ProviderScope.containerOf(context);
-        final selectedKindergartenId = container.read(selectedKindergartenIdProvider);
-        // childIdは必要に応じて取得
-        return NoticeListScreen(kindergartenId: selectedKindergartenId ?? '', type: 'individual');
-      },
-    ),
-    GoRoute(
-      path: '/notices/create',
-      builder: (context, state) {
-        final container = ProviderScope.containerOf(context);
-        final selectedKindergartenId = container.read(selectedKindergartenIdProvider);
-        final type = state.uri.queryParameters['type'] ?? 'all';
-        final classId = state.uri.queryParameters['classId'];
-        final childId = state.uri.queryParameters['childId'];
-        return NoticeCreateScreen(
-          kindergartenId: selectedKindergartenId ?? '',
-          type: type,
-          classId: classId,
-          childId: childId,
-        );
-      },
+      path: '/notices/individual/:kindergartenId/:childId',
+      builder: (context, state) => NoticeListScreen(
+        type: 'individual',
+        kindergartenId: state.pathParameters['kindergartenId']!,
+        childId: state.pathParameters['childId']!,
+      ),
     ),
   ],
 );

@@ -51,6 +51,11 @@ class HomeScreen extends ConsumerWidget {
       data: (user) {
         if (user == null) return const SizedBox.shrink();
 
+        // 選択中の園IDを取得（管理者はselectedKindergartenIdProvider、保育者/保護者はユーザーのkindergartenId）
+        final selectedKindergartenId = user.role.name == 'admin'
+            ? ref.watch(selectedKindergartenIdProvider) ?? ''
+            : user.kindergartenId;
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('ホーム'),
@@ -143,15 +148,31 @@ class HomeScreen extends ConsumerWidget {
                   break;
                 case 2:
                   // 全体連絡画面へ遷移
-                  context.go('/notices/all');
+                  if (selectedKindergartenId.isNotEmpty) {
+                    context.go('/notices/all/$selectedKindergartenId');
+                  } else {
+                    // 園未選択の場合はダイアログ
+                    showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('園が選択されていません'),
+                        content: const Text('先に園を選択してください。'),
+                        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                      ),
+                    );
+                  }
                   break;
                 case 3:
-                  // クラス連絡画面へ遷移
-                  context.go('/notices/class');
+                  // クラス連絡：まずクラス選択画面へ
+                  if (selectedKindergartenId.isNotEmpty) {
+                    context.go('/notices/class/$selectedKindergartenId');
+                  }
                   break;
                 case 4:
-                  // 個別連絡画面へ遷移
-                  context.go('/notices/individual');
+                  // 個別連絡：まず園児一覧画面へ
+                  if (selectedKindergartenId.isNotEmpty) {
+                    context.go('/notices/individual/$selectedKindergartenId');
+                  }
                   break;
               }
             },
