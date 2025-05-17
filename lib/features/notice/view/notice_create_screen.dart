@@ -6,6 +6,9 @@ import '../../auth/view_model/auth_view_model.dart';
 import '../../class/view_model/class_view_model.dart';
 import '../../child/view_model/child_view_model.dart';
 import '../../child/view/child_list_screen.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import '../../auth/model/user_role.dart';
 
 class NoticeCreateScreen extends ConsumerStatefulWidget {
@@ -23,6 +26,7 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
+  PlatformFile? _pickedFile;
   String? _selectedClassId;
   String? _selectedChildId;
   bool _isLoading = false;
@@ -99,6 +103,26 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
                 ),
               ],
               const SizedBox(height: 32),
+              // ファイル選択ボタン
+              TextButton.icon(
+                icon: const Icon(Icons.attach_file),
+                label: const Text('ファイルを選択'),
+                onPressed: _pickFile,
+              ),
+              if (_pickedFile != null) ...[
+                const SizedBox(height: 8),
+                _pickedFile!.extension == 'pdf'
+                    ? ListTile(
+                        leading: const Icon(Icons.picture_as_pdf),
+                        title: Text(_pickedFile!.name),
+                      )
+                    : Image.file(
+                        File(_pickedFile!.path!),
+                        height: 100,
+                        fit: BoxFit.cover,
+                      ),
+                const SizedBox(height: 16),
+              ],
               ElevatedButton(
                 onPressed: (!canPost || _isLoading)
                     ? null
@@ -106,6 +130,23 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
                   if (!_formKey.currentState!.validate()) return;
                   setState(() => _isLoading = true);
                   try {
+                    String? imageUrl;
+                    String? pdfUrl;
+                    // ファイルアップロード
+                    if (_pickedFile != null) {
+                      final storageRef = firebase_storage.FirebaseStorage.instance
+                          .ref()
+                          .child('notices')
+                          .child('${DateTime.now().millisecondsSinceEpoch}_${_pickedFile!.name}');
+                      final uploadTask = storageRef.putFile(File(_pickedFile!.path!));
+                      final snap = await uploadTask;
+                      final url = await snap.ref.getDownloadURL();
+                      if (_pickedFile!.extension == 'pdf') {
+                        pdfUrl = url;
+                      } else {
+                        imageUrl = url;
+                      }
+                    }
                     final notice = NoticeModel(
                       id: '',
                       kindergartenId: widget.kindergartenId,
@@ -116,8 +157,8 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
                       title: _titleController.text.trim(),
                       content: _contentController.text.trim(),
                       createdAt: DateTime.now(),
-                      imageUrl: null,
-                      pdfUrl: null,
+                      imageUrl: imageUrl,
+                      pdfUrl: pdfUrl,
                     );
                     await ref.read(noticeRepositoryProvider).addNotice(notice);
                     // 投稿成功フィードバック
@@ -147,5 +188,18 @@ class _NoticeCreateScreenState extends ConsumerState<NoticeCreateScreen> {
         ),
       ),
     );
+  }
+
+  // ファイルピッカーで選択
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg', 'jpeg', 'pdf'],
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _pickedFile = result.files.first;
+      });
+    }
   }
 }

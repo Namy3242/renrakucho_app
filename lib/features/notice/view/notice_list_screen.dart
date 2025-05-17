@@ -7,6 +7,7 @@ import 'notice_create_screen.dart';
 import '../../auth/view_model/auth_view_model.dart';
 import '../../auth/model/user_role.dart';
 import '../model/notice_model.dart';
+import 'package:intl/intl.dart';
 
 final noticeListProvider = StreamProvider.family<
   List<NoticeModel>,

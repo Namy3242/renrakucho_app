@@ -21,8 +21,10 @@ class NoticeRepository {
     return query.orderBy('createdAt', descending: true).snapshots().map((snap) => snap.docs.map((doc) => NoticeModel.fromFirestore(doc)).toList());
   }
 
-  Future<void> addNotice(NoticeModel notice) async {
-    await _collection.add(notice.toMap());
+  /// Adds a new notice and returns the generated document ID.
+  Future<String> addNotice(NoticeModel notice) async {
+    final docRef = await _collection.add(notice.toMap());
+    return docRef.id;
   }
 
   Future<NoticeModel?> getNoticeById(String id) async {
@@ -34,5 +36,18 @@ class NoticeRepository {
   // ドキュメントを削除
   Future<void> deleteNotice(String id) async {
     await _collection.doc(id).delete();
+  }
+
+  /// Updates an existing notice document with given data fields.
+  Future<void> updateNotice(String id, Map<String, dynamic> data) async {
+    await _collection.doc(id).update(data);
+  }
+
+  /// Generates a new document ID without writing.
+  String generateId() => _collection.doc().id;
+  
+  /// Creates or overwrites a notice document with the given ID.
+  Future<void> setNotice(String id, NoticeModel notice) async {
+    await _collection.doc(id).set(notice.toMap());
   }
 }
