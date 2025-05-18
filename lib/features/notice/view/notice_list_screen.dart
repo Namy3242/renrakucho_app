@@ -7,7 +7,7 @@ import 'notice_create_screen.dart';
 import '../../auth/view_model/auth_view_model.dart';
 import '../../auth/model/user_role.dart';
 import '../model/notice_model.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import '../../child/view/child_list_screen.dart';
 import '../../kindergarten/view/kindergarten_selector.dart';  // for selectedKindergartenIdProvider
 import '../../kindergarten/view/kindergarten_select_screen.dart';
@@ -121,49 +121,43 @@ class NoticeListScreen extends ConsumerWidget {
                   itemBuilder: (context, index) {
                     final notice = displayNotices[index];
                     debugPrint('[NoticeListScreen] notice: $notice');
-                    return ListTile(
-                      // 添付プレビュー
-                      leading: notice.imageUrl != null
-                          ? GestureDetector(
-                              onTap: () => showDialog(
-                                context: context,
-                                builder: (_) => Dialog(
-                                  child: InteractiveViewer(
-                                    child: CachedNetworkImage(
-                                      imageUrl: notice.imageUrl!,
-                                      placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
-                                      errorWidget: (_, __, ___) => const Icon(Icons.error),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              child: Hero(
-                                tag: notice.id,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: CachedNetworkImage(
-                                    imageUrl: notice.imageUrl!,
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : notice.pdfUrl != null
-                              ? const Icon(Icons.picture_as_pdf)
-                              : null,
-                      title: Text(notice.title),
-                      subtitle: Text(notice.content),
-                      trailing: null,
-                      onTap: () {
-                        Navigator.push(
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 2,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => NoticeDetailScreen(noticeId: notice.id),
                           ),
-                        );
-                      },
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                notice.title,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                notice.content,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                DateFormat('yyyy/MM/dd HH:mm').format(notice.createdAt),
+                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     );
                   },
                 ),
